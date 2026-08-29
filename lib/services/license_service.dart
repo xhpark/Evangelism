@@ -28,7 +28,8 @@ class LicenseService extends ChangeNotifier {
   ];
 
   // 개발자 구글 앱스 스크립트 웹앱 기본 엔드포인트 (설정에서 변경 가능)
-  String _webhookUrl = '';
+  String _webhookUrl =
+      'https://script.google.com/macros/s/AKfycbxTv-TsaHH1c5iTCueHREF-c469i31b8KZM1AtRg_BS72kRSyNJ2yInrRFosas_SXM/exec';
   String _deviceId = '';
   LicenseStatus _status = LicenseStatus.unactivated;
   String _userName = '';
@@ -65,7 +66,10 @@ class LicenseService extends ChangeNotifier {
     }
 
     _userName = prefs.getString(_prefKeyUserName) ?? '';
-    _webhookUrl = prefs.getString(_prefKeyWebhookUrl) ?? '';
+    final savedWebhook = prefs.getString(_prefKeyWebhookUrl) ?? '';
+    if (savedWebhook.isNotEmpty) {
+      _webhookUrl = savedWebhook;
+    }
 
     notifyListeners();
 

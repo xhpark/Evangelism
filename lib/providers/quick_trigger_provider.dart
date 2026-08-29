@@ -1,0 +1,213 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import '../models/step_item_model.dart';
+import '../models/exam_result_model.dart';
+import '../data/script_repository.dart';
+import '../services/quick_trigger_engine.dart';
+import '../services/stt_service.dart';
+import '../services/scoring_engine.dart';
+
+class QuickTriggerProvider extends ChangeNotifier {
+  final ScriptRepository _repository;
+  final STTService _stt = STTService();
+
+  List<StepItem> _deck = [];
+  int _currentIndex = 0;
+  TriggerDifficulty _difficulty = TriggerDifficulty.master; // 기본 고급 3단어/1.0초
+  TriggerCardState _cardState = TriggerCardState.ready;
+  double _remainingSeconds = 1.0;
+  Timer? _timer;
+  final Stopwatch _reactionStopwatch = Stopwatch();
+  bool _onlyTransitions = false;
+  List<String> _mistakeIds = [];
+
+  // STT & Dual Scoring 상태
+  bool _isListening = false;
+  String _spokenText = '';
+  double _reactionTimeSeconds = 0.0;
+  double _speedScore = 0.0; // 순발력 점수 (0~100)
+  double _accuracyScore = 0.0; // 정확성 점수 (0~100)
+  ExamResult? _evalResult;
+
+  QuickTriggerProvider(this._repository) {
+    _initSTT();
+  }
+
+  List<StepItem> get deck => _deck;
+  int get currentIndex => _currentIndex;
+  StepItem? get currentCard =>
+      (_deck.isNotEmpty && _currentIndex < _deck.length) ? _deck[_currentIndex] : null;
+  TriggerDifficulty get difficulty => _difficulty;
+  TriggerCardState get cardState => _cardState;
+  double get remainingSeconds => _remainingSeconds;
+  bool get onlyTransitions => _onlyTransitions;
+  List<String> get mistakeIds => _mistakeIds;
+  int get totalCards => _deck.length;
+
+  bool get isListening => _isListening;
+  String get spokenText => _spokenText;
+  double get reactionTimeSeconds => _reactionTimeSeconds;
+  double get speedScore => _speedScore;
+  double get accuracyScore => _accuracyScore;
+  ExamResult? get evalResult => _evalResult;
+
+  Future<void> _initSTT() async {
+    await _stt.initialize();
+    _stt.onResultChanged = (text) {
+      _spokenText = text;
+      if (_reactionTimeSeconds == 0.0 && _reactionStopwatch.isRunning) {
+        _reactionTimeSeconds = _reactionStopwatch.elapsedMilliseconds / 1000.0;
+      }
+      notifyListeners();
+    };
+
+    _stt.onListeningStopped = () {
+      _isListening = false;
+      notifyListeners();
+    };
+  }
+
+  Future<void> initDeck({bool onlyTransitions = false}) async {
+    _onlyTransitions = onlyTransitions;
+    _mistakeIds = await _repository.getMistakeStepIds();
+    final sections = await _repository.loadSections();
+    final allSteps = sections.expand((s) => s.steps).toList();
+
+    _deck = QuickTriggerEngine.generateDeck(allSteps, onlyTransitions: onlyTransitions);
+    _currentIndex = 0;
+    _cardState = TriggerCardState.ready;
+    _remainingSeconds = _difficulty.durationSeconds;
+    _spokenText = '';
+    _speedScore = 0.0;
+    _accuracyScore = 0.0;
+    _evalResult = null;
+    notifyListeners();
+  }
+
+  void setDifficulty(TriggerDifficulty diff) {
+    _difficulty = diff;
+    _remainingSeconds = diff.durationSeconds;
+    notifyListeners();
+  }
+
+  void toggleTransitionOnly(bool value) {
+    initDeck(onlyTransitions: value);
+  }
+
+  /// 순발력 테스트 & STT 음성 인식 시작
+  Future<void> startTimerAndSTT() async {
+    _timer?.cancel();
+    _spokenText = '';
+    _reactionTimeSeconds = 0.0;
+    _speedScore = 0.0;
+    _accuracyScore = 0.0;
+    _evalResult = null;
+    _cardState = TriggerCardState.countdown;
+    _remainingSeconds = _difficulty.durationSeconds;
+    _isListening = true;
+    notifyListeners();
+
+    _reactionStopwatch.reset();
+    _reactionStopwatch.start();
+
+    // STT 실시간 수음 시작
+    await _stt.startListening(clearBuffer: true);
+
+    const tickMs = 50;
+    final totalTicks = (_difficulty.durationSeconds * 1000 / tickMs).round();
+    int currentTick = 0;
+
+    _timer = Timer.periodic(const Duration(milliseconds: tickMs), (t) {
+      currentTick++;
+      _remainingSeconds =
+          (_difficulty.durationSeconds - (currentTick * tickMs / 1000)).clamp(0.0, _difficulty.durationSeconds);
+
+      if (currentTick >= totalTicks) {
+        _timer?.cancel();
+        _remainingSeconds = 0.0;
+        // 타이머가 종료되어도 사용자가 말하고 있으면 자연스럽게 수음 유지
+        notifyListeners();
+      } else {
+        notifyListeners();
+      }
+    });
+  }
+
+  /// 수음 종료 및 순발력 점수 + 정확성 점수 듀얼 채점
+  Future<void> finishAndScore() async {
+    _timer?.cancel();
+    _reactionStopwatch.stop();
+    _isListening = false;
+    await _stt.stopListening();
+
+    if (currentCard == null) return;
+
+    // 1. 순발력 점수 산출 (시간 내 반응 속도 기준)
+    final limit = _difficulty.durationSeconds;
+    final reaction = (_reactionTimeSeconds > 0.0)
+        ? _reactionTimeSeconds
+        : (_reactionStopwatch.elapsedMilliseconds / 1000.0);
+    _reactionTimeSeconds = reaction;
+
+    if (reaction <= limit) {
+      // 제한 시간 내 발화 시작 시 70~100점
+      _speedScore = (((limit - reaction) / limit) * 30.0 + 70.0).clamp(70.0, 100.0);
+    } else {
+      // 제한 시간 초과 시 30~65점
+      final overRatio = ((reaction - limit) / limit).clamp(0.0, 1.0);
+      _speedScore = (65.0 - overRatio * 35.0).clamp(20.0, 65.0);
+    }
+
+    // 2. 정확성 점수 산출 (원문 대조 Myers Diff & 키워드 가중치)
+    final result = ScoringEngine.calculateScore(
+      examId: 'trigger_${currentCard!.stepId}',
+      title: currentCard!.name,
+      originalText: currentCard!.effectiveScript,
+      spokenText: _spokenText,
+      keywords: currentCard!.keywords,
+    );
+
+    _accuracyScore = result.totalScore;
+    _evalResult = result;
+
+    // 3. 오답노트 자동 관리 (정확도 80점 미만이면 오답노트 등록)
+    if (_accuracyScore < 80.0) {
+      await _repository.addMistake(currentCard!.stepId);
+    } else {
+      await _repository.removeMistake(currentCard!.stepId);
+    }
+    _mistakeIds = await _repository.getMistakeStepIds();
+
+    _cardState = TriggerCardState.revealed;
+    notifyListeners();
+  }
+
+  /// 다음 카드로 넘기기
+  Future<void> nextCard() async {
+    _timer?.cancel();
+    _reactionStopwatch.stop();
+    await _stt.stopListening();
+    _isListening = false;
+    _spokenText = '';
+    _speedScore = 0.0;
+    _accuracyScore = 0.0;
+    _evalResult = null;
+
+    if (_currentIndex + 1 < _deck.length) {
+      _currentIndex++;
+      _cardState = TriggerCardState.ready;
+      _remainingSeconds = _difficulty.durationSeconds;
+    } else {
+      // 전체 카드 완주 후 재셔플
+      await initDeck(onlyTransitions: _onlyTransitions);
+    }
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _reactionStopwatch.stop();
+    super.dispose();
+  }
+}

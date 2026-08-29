@@ -15,6 +15,7 @@ class LicenseActivationScreen extends StatefulWidget {
 class _LicenseActivationScreenState extends State<LicenseActivationScreen> {
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _affiliationController = TextEditingController();
   String? _errorMessage;
   bool _isSubmitting = false;
 
@@ -22,14 +23,32 @@ class _LicenseActivationScreenState extends State<LicenseActivationScreen> {
   void dispose() {
     _pinController.dispose();
     _nameController.dispose();
+    _affiliationController.dispose();
     super.dispose();
   }
 
   Future<void> _handleActivation() async {
+    final name = _nameController.text.trim();
+    final affiliation = _affiliationController.text.trim();
     final pin = _pinController.text.trim();
+
+    if (name.isEmpty) {
+      setState(() {
+        _errorMessage = '훈련생 성명을 입력해 주세요 (필수).';
+      });
+      return;
+    }
+
+    if (affiliation.isEmpty) {
+      setState(() {
+        _errorMessage = '소속 교회 및 훈련 기수를 입력해 주세요 (필수).';
+      });
+      return;
+    }
+
     if (pin.isEmpty) {
       setState(() {
-        _errorMessage = '개발자로부터 발급받은 인증키(PIN)를 입력해 주세요.';
+        _errorMessage = '개발자로부터 발급받은 인증키(PIN)를 입력해 주세요 (필수).';
       });
       return;
     }
@@ -42,7 +61,8 @@ class _LicenseActivationScreenState extends State<LicenseActivationScreen> {
     final licenseService = Provider.of<LicenseService>(context, listen: false);
     final success = await licenseService.activateWithPin(
       pin,
-      userName: _nameController.text.trim(),
+      userName: name,
+      affiliation: affiliation,
     );
 
     setState(() {
@@ -234,33 +254,71 @@ class _LicenseActivationScreenState extends State<LicenseActivationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '훈련생 성명 (선택)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryNavy,
-                        ),
+                      const Row(
+                        children: [
+                          Icon(Icons.person, size: 16, color: AppTheme.primaryBlue),
+                          SizedBox(width: 6),
+                          Text(
+                            '훈련생 성명 * 필수',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryNavy,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _nameController,
                         decoration: InputDecoration(
-                          hintText: '예: 홍길동 (○○교회 훈련생)',
+                          hintText: '예: 홍길동',
                           hintStyle: const TextStyle(fontSize: 13, color: Colors.black38),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
-                      const Text(
-                        '마스터 인증키 (PIN) * 필수',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryNavy,
+                      const Row(
+                        children: [
+                          Icon(Icons.church, size: 16, color: AppTheme.primaryBlue),
+                          SizedBox(width: 6),
+                          Text(
+                            '소속 교회 및 훈련 기수 * 필수',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryNavy,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _affiliationController,
+                        decoration: InputDecoration(
+                          hintText: '예: 서울OO교회 전도폭발 7기',
+                          hintStyle: const TextStyle(fontSize: 13, color: Colors.black38),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      const Row(
+                        children: [
+                          Icon(Icons.vpn_key, size: 16, color: AppTheme.primaryBlue),
+                          SizedBox(width: 6),
+                          Text(
+                            '마스터 인증키 (PIN) * 필수',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryNavy,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 6),
                       TextField(

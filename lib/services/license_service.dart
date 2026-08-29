@@ -17,6 +17,7 @@ class LicenseService extends ChangeNotifier {
   static const String _prefKeyStatus = 'just_ee_license_status';
   static const String _prefKeyActivatedPin = 'just_ee_activated_pin';
   static const String _prefKeyUserName = 'just_ee_user_name';
+  static const String _prefKeyUserAffiliation = 'just_ee_user_affiliation';
   static const String _prefKeyWebhookUrl = 'just_ee_gas_webhook_url';
 
   // 기본 마스터 인증키 목록 (대소문자/하이픈 무관)
@@ -33,12 +34,14 @@ class LicenseService extends ChangeNotifier {
   String _deviceId = '';
   LicenseStatus _status = LicenseStatus.unactivated;
   String _userName = '';
+  String _userAffiliation = '';
   String _blockReason = '권리자의 승인이 취소되었거나 비인가 단말기로 등록되었습니다.';
   bool _isChecking = false;
 
   LicenseStatus get status => _status;
   String get deviceId => _deviceId;
   String get userName => _userName;
+  String get userAffiliation => _userAffiliation;
   String get blockReason => _blockReason;
   bool get isChecking => _isChecking;
   bool get isActivated => _status == LicenseStatus.active;
@@ -66,6 +69,7 @@ class LicenseService extends ChangeNotifier {
     }
 
     _userName = prefs.getString(_prefKeyUserName) ?? '';
+    _userAffiliation = prefs.getString(_prefKeyUserAffiliation) ?? '';
     final savedWebhook = prefs.getString(_prefKeyWebhookUrl) ?? '';
     if (savedWebhook.isNotEmpty) {
       _webhookUrl = savedWebhook;
@@ -88,7 +92,11 @@ class LicenseService extends ChangeNotifier {
   }
 
   /// 마스터 PIN 또는 원격 인증 검증 및 활성화 (방안 2 & 4)
-  Future<bool> activateWithPin(String inputPin, {String userName = ''}) async {
+  Future<bool> activateWithPin(
+    String inputPin, {
+    String userName = '',
+    String affiliation = '',
+  }) async {
     _isChecking = true;
     notifyListeners();
 
@@ -122,15 +130,22 @@ class LicenseService extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _status = LicenseStatus.active;
     _userName = userName;
+    _userAffiliation = affiliation;
     await prefs.setString(_prefKeyStatus, 'active');
     await prefs.setString(_prefKeyActivatedPin, inputPin);
     await prefs.setString(_prefKeyUserName, userName);
+    await prefs.setString(_prefKeyUserAffiliation, affiliation);
 
     _isChecking = false;
     notifyListeners();
 
     // 4. 신규 기기 활성화 실시간 텔레메트리 전송 (방안 4)
-    _sendTelemetry(action: 'activate', pin: inputPin, userName: userName);
+    _sendTelemetry(
+      action: 'activate',
+      pin: inputPin,
+      userName: userName,
+      affiliation: affiliation,
+    );
 
     return true;
   }
@@ -172,6 +187,7 @@ class LicenseService extends ChangeNotifier {
     required String action,
     required String pin,
     required String userName,
+    required String affiliation,
   }) async {
     if (_webhookUrl.isEmpty) return;
 
@@ -180,6 +196,7 @@ class LicenseService extends ChangeNotifier {
         'action': action,
         'device_id': _deviceId,
         'user_name': userName.isEmpty ? '훈련생' : userName,
+        'affiliation': affiliation.isEmpty ? '미입력' : affiliation,
         'pin': pin,
         'os': Platform.operatingSystem,
         'os_version': Platform.operatingSystemVersion,
@@ -223,8 +240,10 @@ class LicenseService extends ChangeNotifier {
     await prefs.remove(_prefKeyStatus);
     await prefs.remove(_prefKeyActivatedPin);
     await prefs.remove(_prefKeyUserName);
+    await prefs.remove(_prefKeyUserAffiliation);
     _status = LicenseStatus.unactivated;
     _userName = '';
+    _userAffiliation = '';
     notifyListeners();
   }
 }

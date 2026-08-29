@@ -101,6 +101,7 @@ function doPost(e) {
     const action = contents.action;
     const deviceId = (contents.device_id || "").trim();
     const userName = (contents.user_name || "미입력").trim();
+    const affiliation = (contents.affiliation || "미입력").trim();
     const pin = (contents.pin || "").trim().toUpperCase();
     const os = contents.os || "Android";
     const osVersion = contents.os_version || "";
@@ -119,9 +120,11 @@ function doPost(e) {
         }
       }
 
+      const userDisplay = userName + " (" + affiliation + ")";
+
       if (rowIndex > 0) {
         // 기존 기기 업데이트
-        sheet.getRange(rowIndex, 3).setValue(userName);
+        sheet.getRange(rowIndex, 3).setValue(userDisplay);
         sheet.getRange(rowIndex, 4).setValue(pin);
         sheet.getRange(rowIndex, 8).setValue(nowStr);
       } else {
@@ -129,7 +132,7 @@ function doPost(e) {
         sheet.appendRow([
           nowStr,
           deviceId,
-          userName,
+          userDisplay,
           pin,
           "APPROVED",
           os + " (" + osVersion + ")",
@@ -140,9 +143,10 @@ function doPost(e) {
 
         // 📧 개발자에게 실시간 이메일 알림 전송 (방안 4)
         try {
-          const subject = "🔔 [JUST EE] 신규 기기 인증 활성화 알림 (" + userName + ")";
+          const subject = "🔔 [JUST EE] 신규 기기 인증 활성화 알림: " + userName + " (" + affiliation + ")";
           const body = "전도폭발 JUST EE 훈련 마스터 앱에서 새로운 기기가 활성화되었습니다.\n\n" +
             "• 훈련생 성명: " + userName + "\n" +
+            "• 소속 교회/기수: " + affiliation + "\n" +
             "• 기기 고유 코드: " + deviceId + "\n" +
             "• 입력된 인증키: " + pin + "\n" +
             "• 단말기 환경: " + os + " (" + osVersion + ")\n" +

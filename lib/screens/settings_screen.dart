@@ -562,11 +562,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: AppTheme.primaryNavy,
                                 ),
                               ),
-                              if (license.userName.isNotEmpty) ...[
+                              if (license.userName.isNotEmpty || license.userAffiliation.isNotEmpty) ...[
                                 const SizedBox(height: 6),
                                 Text(
-                                  "등록 훈련생: ${license.userName}",
-                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+                                  "등록 훈련생: ${license.userName}${license.userAffiliation.isNotEmpty ? ' (${license.userAffiliation})' : ''}",
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ],

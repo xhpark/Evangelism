@@ -36,16 +36,22 @@ void main() {
       await service.initialize();
 
       // 마스터 PIN 활성화
-      final success = await service.activateWithPin('JUST-EE2026', userName: '박상환');
+      final success = await service.activateWithPin(
+        'JUST-EE2026',
+        userName: '박상환',
+        affiliation: '서울OO교회 7기',
+      );
       expect(success, isTrue);
       expect(service.status, LicenseStatus.active);
       expect(service.isActivated, isTrue);
       expect(service.userName, '박상환');
+      expect(service.userAffiliation, '서울OO교회 7기');
 
       // 하이픈 없는 소문자 입력도 정상 통과 검증
       final service3 = LicenseService();
       await service3.initialize();
       expect(service3.isActivated, isTrue);
+      expect(service3.userAffiliation, '서울OO교회 7기');
     });
 
     test('TS-LIC-003: 잘못된 PIN 입력 시 활성화 거부 검증', () async {
@@ -61,7 +67,11 @@ void main() {
     test('TS-LIC-004: 원격 킬스위치 차단 시 Blocked 상태 전환 검증 (방안 1)', () async {
       final service = LicenseService();
       await service.initialize();
-      await service.activateWithPin('JUST-EE2026');
+      await service.activateWithPin(
+        'JUST-EE2026',
+        userName: '박상환',
+        affiliation: '서울OO교회',
+      );
       expect(service.isActivated, isTrue);
 
       // 킬스위치 작동
@@ -73,7 +83,7 @@ void main() {
   });
 
   group('License Screen Widget Tests (TS-LIC-005 ~ 006)', () {
-    testWidgets('TS-LIC-005: LicenseActivationScreen UI 렌더링 및 PIN 입력 필드 검증', (WidgetTester tester) async {
+    testWidgets('TS-LIC-005: LicenseActivationScreen UI 렌더링 및 성명/소속/PIN 필수 입력 필드 검증', (WidgetTester tester) async {
       final service = LicenseService();
       await service.initialize();
 
@@ -89,6 +99,9 @@ void main() {
 
       expect(find.text('정식 훈련생 기기 인증'), findsOneWidget);
       expect(find.textContaining('EE-'), findsOneWidget);
+      expect(find.text('훈련생 성명 * 필수'), findsOneWidget);
+      expect(find.text('소속 교회 및 훈련 기수 * 필수'), findsOneWidget);
+      expect(find.text('마스터 인증키 (PIN) * 필수'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, '인증 및 훈련 시작하기 ➔'), findsOneWidget);
       expect(find.textContaining('xhpark@naver.com'), findsOneWidget);
     });

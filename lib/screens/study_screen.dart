@@ -167,6 +167,9 @@ class _StudyScreenState extends State<StudyScreen> {
                       onTap: () {
                         _lastActiveStepId = null;
                         study.selectSection(idx);
+                        if (_scrollController.hasClients) {
+                          _scrollController.jumpTo(0.0);
+                        }
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
@@ -178,28 +181,17 @@ class _StudyScreenState extends State<StudyScreen> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isSelected
-                                ? AppTheme.primaryBlue
-                                : const Color(0xFFCBD5E1),
-                            width: isSelected ? 1.5 : 1.0,
+                                ? AppTheme.primaryNavy
+                                : Colors.transparent,
+                            width: 1.5,
                           ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: AppTheme.primaryBlue.withValues(alpha: 0.25),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
                         ),
                         child: Text(
                           labelText,
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xFF1E293B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : AppTheme.primaryNavy,
                           ),
                         ),
                       ),
@@ -219,7 +211,12 @@ class _StudyScreenState extends State<StudyScreen> {
                 onFingerSelected: (fingerIdx) {
                   _lastActiveStepId = null;
                   final targetIdx = study.sections.indexWhere((s) => s.fingerIndex == fingerIdx);
-                  if (targetIdx != -1) study.selectSection(targetIdx);
+                  if (targetIdx != -1) {
+                    study.selectSection(targetIdx);
+                    if (_scrollController.hasClients) {
+                      _scrollController.jumpTo(0.0);
+                    }
+                  }
                 },
               ),
             ),

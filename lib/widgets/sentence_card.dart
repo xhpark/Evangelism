@@ -241,10 +241,19 @@ class _SentenceCardState extends State<SentenceCard> {
     );
   }
 
+  /// 괄호가 포함된 소제목은 괄호 앞을 개행(\n)하여
+  /// 괄호 전체가 온전하게 다음 줄로 일괄 줄바꿈되도록 처리
+  static String _formatBadgeWithParenthesesWrap(String text) {
+    if (text.contains('(')) {
+      return text.replaceAll(RegExp(r'\s*\('), '\n(').trim();
+    }
+    return text;
+  }
+
   Widget _buildTypeBadge(StepItem step) {
     Color bg;
     Color fg;
-    String label = step.name;
+    String label = _formatBadgeWithParenthesesWrap(step.name);
 
     switch (step.type) {
       case StepType.verse:
@@ -269,14 +278,19 @@ class _SentenceCardState extends State<SentenceCard> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: fg),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: fg,
+          height: 1.25,
+        ),
       ),
     );
   }

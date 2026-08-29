@@ -146,7 +146,7 @@ function doPost(e) {
           const subject = "🔔 [JUST EE] 신규 기기 인증 활성화 알림: " + userName + " (" + affiliation + ")";
           const body = "전도폭발 JUST EE 훈련 마스터 앱에서 새로운 기기가 활성화되었습니다.\n\n" +
             "• 훈련생 성명: " + userName + "\n" +
-            "• 소속 교회/기수: " + affiliation + "\n" +
+            "• 소속: " + affiliation + "\n" +
             "• 기기 고유 코드: " + deviceId + "\n" +
             "• 입력된 인증키: " + pin + "\n" +
             "• 단말기 환경: " + os + " (" + osVersion + ")\n" +

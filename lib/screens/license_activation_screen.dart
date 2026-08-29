@@ -41,7 +41,7 @@ class _LicenseActivationScreenState extends State<LicenseActivationScreen> {
 
     if (affiliation.isEmpty) {
       setState(() {
-        _errorMessage = '소속 교회 및 훈련 기수를 입력해 주세요 (필수).';
+        _errorMessage = '소속을 입력해 주세요 (필수).';
       });
       return;
     }
@@ -282,10 +282,10 @@ class _LicenseActivationScreenState extends State<LicenseActivationScreen> {
 
                       const Row(
                         children: [
-                          Icon(Icons.church, size: 16, color: AppTheme.primaryBlue),
+                          Icon(Icons.business, size: 16, color: AppTheme.primaryBlue),
                           SizedBox(width: 6),
                           Text(
-                            '소속 교회 및 훈련 기수 * 필수',
+                            '소속 * 필수',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -298,7 +298,7 @@ class _LicenseActivationScreenState extends State<LicenseActivationScreen> {
                       TextField(
                         controller: _affiliationController,
                         decoration: InputDecoration(
-                          hintText: '예: 서울OO교회 전도폭발 7기',
+                          hintText: '예: 서울OO교회',
                           hintStyle: const TextStyle(fontSize: 13, color: Colors.black38),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),

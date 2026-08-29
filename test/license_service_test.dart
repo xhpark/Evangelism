@@ -100,7 +100,7 @@ void main() {
       expect(find.text('정식 훈련생 기기 인증'), findsOneWidget);
       expect(find.textContaining('EE-'), findsOneWidget);
       expect(find.text('훈련생 성명 * 필수'), findsOneWidget);
-      expect(find.text('소속 교회 및 훈련 기수 * 필수'), findsOneWidget);
+      expect(find.text('소속 * 필수'), findsOneWidget);
       expect(find.text('마스터 인증키 (PIN) * 필수'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, '인증 및 훈련 시작하기 ➔'), findsOneWidget);
       expect(find.textContaining('xhpark@naver.com'), findsOneWidget);

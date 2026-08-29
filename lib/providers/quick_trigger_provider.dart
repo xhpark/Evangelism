@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../models/section_model.dart';
 import '../models/step_item_model.dart';
 import '../models/exam_result_model.dart';
 import '../data/script_repository.dart';
@@ -12,6 +13,7 @@ class QuickTriggerProvider extends ChangeNotifier {
   final STTService _stt = STTService();
 
   List<StepItem> _deck = [];
+  List<Section> _sections = [];
   int _currentIndex = 0;
   TriggerDifficulty _difficulty = TriggerDifficulty.master; // 기본 고급 3단어/1.0초
   TriggerCardState _cardState = TriggerCardState.ready;
@@ -28,12 +30,13 @@ class QuickTriggerProvider extends ChangeNotifier {
   double _speedScore = 0.0; // 순발력 점수 (0~100)
   double _accuracyScore = 0.0; // 정확성 점수 (0~100)
   ExamResult? _evalResult;
+  String? _sttError;
+  bool _isScoring = false;
 
-  QuickTriggerProvider(this._repository) {
-    _initSTT();
-  }
+  QuickTriggerProvider(this._repository);
 
   List<StepItem> get deck => _deck;
+  List<Section> get sections => _sections;
   int get currentIndex => _currentIndex;
   StepItem? get currentCard =>
       (_deck.isNotEmpty && _currentIndex < _deck.length) ? _deck[_currentIndex] : null;
@@ -50,28 +53,21 @@ class QuickTriggerProvider extends ChangeNotifier {
   double get speedScore => _speedScore;
   double get accuracyScore => _accuracyScore;
   ExamResult? get evalResult => _evalResult;
+  bool get isScoring => _isScoring;
 
-  Future<void> _initSTT() async {
-    await _stt.initialize();
-    _stt.onResultChanged = (text) {
-      _spokenText = text;
-      if (_reactionTimeSeconds == 0.0 && _reactionStopwatch.isRunning) {
-        _reactionTimeSeconds = _reactionStopwatch.elapsedMilliseconds / 1000.0;
-      }
-      notifyListeners();
-    };
+  /// 마이크/음성 인식 실패 사유 (없으면 null)
+  String? get sttError => _sttError;
 
-    _stt.onListeningStopped = () {
-      _isListening = false;
-      notifyListeners();
-    };
+  void clearSttError() {
+    _sttError = null;
+    notifyListeners();
   }
 
   Future<void> initDeck({bool onlyTransitions = false}) async {
     _onlyTransitions = onlyTransitions;
     _mistakeIds = await _repository.getMistakeStepIds();
-    final sections = await _repository.loadSections();
-    final allSteps = sections.expand((s) => s.steps).toList();
+    _sections = await _repository.loadSections();
+    final allSteps = _sections.expand((s) => s.steps).toList();
 
     _deck = QuickTriggerEngine.generateDeck(allSteps, onlyTransitions: onlyTransitions);
     _currentIndex = 0;
@@ -82,6 +78,12 @@ class QuickTriggerProvider extends ChangeNotifier {
     _accuracyScore = 0.0;
     _evalResult = null;
     notifyListeners();
+  }
+
+  /// 설정 탭에서 대본이 수정/일괄 반영된 뒤 호출한다.
+  /// (덱이 옛 문장 객체를 붙들고 있어 수정 전 대본으로 채점되던 문제를 방지)
+  Future<void> refreshFromRepository() async {
+    await initDeck(onlyTransitions: _onlyTransitions);
   }
 
   void setDifficulty(TriggerDifficulty diff) {
@@ -102,6 +104,7 @@ class QuickTriggerProvider extends ChangeNotifier {
     _speedScore = 0.0;
     _accuracyScore = 0.0;
     _evalResult = null;
+    _sttError = null;
     _cardState = TriggerCardState.countdown;
     _remainingSeconds = _difficulty.durationSeconds;
     _isListening = true;
@@ -111,9 +114,37 @@ class QuickTriggerProvider extends ChangeNotifier {
     _reactionStopwatch.start();
 
     // STT 실시간 수음 시작
-    await _stt.startListening(clearBuffer: true);
+    final started = await _stt.startListening(
+      onResult: (text) {
+        _spokenText = text;
+        _markSpeechOnset();
+        notifyListeners();
+      },
+      onLevel: (level) {
+        // 음성 에너지가 감지된 시점이 인식 결과보다 빠르므로 반응 시각으로 더 정확하다.
+        if (level > 1.0) _markSpeechOnset();
+      },
+      onStopped: () {
+        _isListening = false;
+        notifyListeners();
+      },
+      onError: (message) {
+        _sttError = message;
+        _isListening = false;
+        notifyListeners();
+      },
+    );
 
-    const tickMs = 50;
+    if (!started) {
+      _isListening = false;
+      _cardState = TriggerCardState.ready;
+      _timer?.cancel();
+      _reactionStopwatch.stop();
+      notifyListeners();
+      return;
+    }
+
+    const tickMs = 100;
     final totalTicks = (_difficulty.durationSeconds * 1000 / tickMs).round();
     int currentTick = 0;
 
@@ -131,6 +162,24 @@ class QuickTriggerProvider extends ChangeNotifier {
         notifyListeners();
       }
     });
+  }
+
+  /// 발화 시작 시각 기록 (최초 1회만)
+  void _markSpeechOnset() {
+    if (_reactionTimeSeconds == 0.0 && _reactionStopwatch.isRunning) {
+      _reactionTimeSeconds = _reactionStopwatch.elapsedMilliseconds / 1000.0;
+    }
+  }
+
+  /// 탭 이동/백그라운드 전환 등으로 수음을 강제 중단 (채점하지 않음)
+  Future<void> abortListening() async {
+    _timer?.cancel();
+    _reactionStopwatch.stop();
+    _isListening = false;
+    await _stt.cancel();
+    _cardState = TriggerCardState.ready;
+    _remainingSeconds = _difficulty.durationSeconds;
+    notifyListeners();
   }
 
   /// 수음 종료 및 순발력 점수 + 정확성 점수 듀얼 채점
@@ -158,8 +207,11 @@ class QuickTriggerProvider extends ChangeNotifier {
       _speedScore = (65.0 - overRatio * 35.0).clamp(20.0, 65.0);
     }
 
-    // 2. 정확성 점수 산출 (원문 대조 Myers Diff & 키워드 가중치)
-    final result = ScoringEngine.calculateScore(
+    _isScoring = true;
+    notifyListeners();
+
+    // 2. 정확성 점수 산출 (원문 대조 어절 정렬 Diff & 키워드 가중치)
+    final result = await ScoringEngine.calculateScoreAsync(
       examId: 'trigger_${currentCard!.stepId}',
       title: currentCard!.name,
       originalText: currentCard!.effectiveScript,
@@ -178,6 +230,7 @@ class QuickTriggerProvider extends ChangeNotifier {
     }
     _mistakeIds = await _repository.getMistakeStepIds();
 
+    _isScoring = false;
     _cardState = TriggerCardState.revealed;
     notifyListeners();
   }
@@ -208,6 +261,7 @@ class QuickTriggerProvider extends ChangeNotifier {
   void dispose() {
     _timer?.cancel();
     _reactionStopwatch.stop();
+    _stt.cancel();
     super.dispose();
   }
 }

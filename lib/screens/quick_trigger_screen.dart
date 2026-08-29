@@ -247,6 +247,37 @@ class _QuickTriggerTabView extends StatelessWidget {
             ),
           const SizedBox(height: 16),
 
+          // 마이크/음성 인식 오류 안내
+          if (provider.sttError != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.mic_off_outlined, size: 18, color: AppTheme.accentRed),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      provider.sttError!,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.4),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: provider.clearSttError,
+                    tooltip: "닫기",
+                  ),
+                ],
+              ),
+            ),
+
           // 5. STT 음성 인식 & 마이크 상태 표시
           if (provider.cardState == TriggerCardState.countdown) ...[
             Center(
@@ -324,7 +355,7 @@ class _QuickTriggerTabView extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                "반응 속도: ${provider.reactionTimeSeconds.toStringAsFixed(2)}초",
+                                "반응 속도: ${provider.reactionTimeSeconds.toStringAsFixed(2)}초 (음성 감지 기준)",
                                 style: const TextStyle(fontSize: 11, color: Color(0xFF78350F)),
                               ),
                             ],
@@ -457,7 +488,20 @@ class _TransitionDeckTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final list = TransitionSentenceEngine.getAllTransitions();
+    final sections = context.watch<QuickTriggerProvider>().sections;
+    final list = TransitionSentenceEngine.buildFromSections(sections);
+
+    if (list.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            "전환문장 데이터를 불러오는 중입니다.",
+            style: TextStyle(color: Color(0xFF64748B)),
+          ),
+        ),
+      );
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),

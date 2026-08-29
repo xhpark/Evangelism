@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/script_manage_provider.dart';
+import '../providers/quick_trigger_provider.dart';
+import '../providers/voice_exam_provider.dart';
 import '../providers/study_provider.dart';
 import '../services/license_service.dart';
 import '../models/step_item_model.dart';
@@ -460,7 +462,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             final text = _importController.text.trim();
                             if (text.isEmpty) return;
                             final ok = await provider.importText(text);
-                            await study.refresh();
+                            if (!context.mounted) return;
+                            await _propagateScriptChange(context);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -518,7 +521,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           await provider.saveTestimony(_testimonyController.text.trim());
-                          await study.refresh();
+                          if (!context.mounted) return;
+                          await _propagateScriptChange(context);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("개인 간증이 저장되었습니다.")),
@@ -659,7 +663,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               label: const Text("원격 승인 동기화", style: TextStyle(fontSize: 12)),
                             ),
                             OutlinedButton.icon(
-                              onPressed: () => _showWebhookConfigDialog(context, license),
+                              onPressed: () async {
+                                final allowed =
+                                    await _confirmDeveloperAccess(context, license);
+                                if (allowed && context.mounted) {
+                                  _showWebhookConfigDialog(context, license);
+                                }
+                              },
                               icon: const Icon(Icons.link, size: 16),
                               label: const Text("구글 시트 연동 설정", style: TextStyle(fontSize: 12)),
                             ),
@@ -841,7 +851,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final newText = controller.text.trim();
               if (newText.isNotEmpty) {
                 await provider.updateStep(step.stepId, newText);
-                await study.refresh();
+                if (!context.mounted) return;
+                await _propagateScriptChange(context);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("문장이 성공적으로 수정되어 저장되었습니다.")),
@@ -855,6 +866,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// 대본이 바뀌면 학습 탭뿐 아니라 순발력 덱과 실전시험 문항까지 함께 갱신한다.
+  /// (2026-08-29: 순발력 덱이 수정 전 문장 객체를 붙들고 있어 옛 대본으로 채점되던 문제 수정)
+  static Future<void> _propagateScriptChange(BuildContext context) async {
+    await context.read<StudyProvider>().refresh();
+    if (!context.mounted) return;
+    await context.read<QuickTriggerProvider>().refreshFromRepository();
+    if (!context.mounted) return;
+    await context.read<VoiceExamProvider>().generateNewQuestion();
+  }
+
+  /// 웹훅 URL 변경은 개발자 전용 기능이므로 마스터 인증키를 다시 확인한다.
+  Future<bool> _confirmDeveloperAccess(BuildContext context, LicenseService license) async {
+    final controller = TextEditingController();
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.admin_panel_settings_outlined, color: AppTheme.primaryBlue),
+            SizedBox(width: 8),
+            Expanded(child: Text("개발자 확인", style: TextStyle(fontSize: 16))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "구글 시트 연동 주소는 원격 승인·차단에 직접 연결되는 개발자 설정입니다.\n"
+              "변경하려면 마스터 인증키를 입력해 주세요.",
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              decoration: const InputDecoration(
+                hintText: "마스터 인증키",
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("취소"),
+          ),
+          ElevatedButton(
+            onPressed: () =>
+                Navigator.pop(ctx, license.verifyMasterPin(controller.text)),
+            child: const Text("확인"),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("마스터 인증키가 일치하지 않아 변경할 수 없습니다."),
+          backgroundColor: AppTheme.accentRed,
+        ),
+      );
+    }
+    return ok == true;
   }
 
   void _showWebhookConfigDialog(BuildContext context, LicenseService license) {
@@ -899,7 +980,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await license.setWebhookUrl(controller.text);
+              final url = controller.text.trim();
+              final uri = Uri.tryParse(url);
+              final isValid = url.isNotEmpty &&
+                  uri != null &&
+                  uri.isScheme('https') &&
+                  uri.host.endsWith('google.com');
+
+              if (!isValid) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text("https://script.google.com/... 형식의 주소만 저장할 수 있습니다."),
+                    backgroundColor: AppTheme.accentRed,
+                  ),
+                );
+                return;
+              }
+
+              await license.setWebhookUrl(url);
               if (context.mounted) {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(

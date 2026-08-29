@@ -101,11 +101,19 @@ class ScriptRepository {
   }
 
   /// 시험 결과 저장 및 조회
+  /// 보관하는 시험 이력 최대 건수.
+  /// 한 건에 원문·발화문·대조 토큰이 모두 들어가 무제한 누적되면
+  /// 저장할 때마다 전체를 다시 직렬화하느라 앱이 느려진다.
+  static const int maxExamHistory = 50;
+
   Future<void> saveExamResult(ExamResult result) async {
     final prefs = await SharedPreferences.getInstance();
     final list = await getExamHistory();
     list.insert(0, result);
-    final encoded = json.encode(list.map((r) => r.toJson()).toList());
+
+    final trimmed =
+        list.length > maxExamHistory ? list.sublist(0, maxExamHistory) : list;
+    final encoded = json.encode(trimmed.map((r) => r.toJson()).toList());
     await prefs.setString(_examHistoryKey, encoded);
   }
 

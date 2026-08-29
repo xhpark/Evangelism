@@ -28,6 +28,14 @@ class LicenseService extends ChangeNotifier {
     'PARK-7788-9900',
   ];
 
+  /// 백엔드(Apps Script)와 공유하는 요청 서명용 시크릿.
+  /// 원문을 그대로 보내지 않고 `sha256(deviceId + secret)` 서명만 전송한다.
+  /// ⚠️ 값을 바꾸면 Apps Script의 SHARED_SECRET도 함께 바꿔 재배포해야 한다.
+  static const String _sharedSecret = 'JUSTEE-2026-GATEWAY-8f31c7';
+
+  /// 텔레메트리에 기록되는 앱 버전. pubspec.yaml의 version과 함께 갱신할 것.
+  static const String appVersion = '1.0.0+1';
+
   // 개발자 구글 앱스 스크립트 웹앱 기본 엔드포인트 (설정에서 변경 가능)
   String _webhookUrl =
       'https://script.google.com/macros/s/AKfycbxTv-TsaHH1c5iTCueHREF-c469i31b8KZM1AtRg_BS72kRSyNJ2yInrRFosas_SXM/exec';
@@ -91,7 +99,25 @@ class LicenseService extends ChangeNotifier {
     return 'EE-${hex.substring(0, 4)}-${hex.substring(4, 8)}-${hex.substring(8, 12)}';
   }
 
-  /// 마스터 PIN 또는 원격 인증 검증 및 활성화 (방안 2 & 4)
+  /// 요청 서명 생성 (기기 UUID + 공유 시크릿의 SHA-256)
+  String _requestSignature() =>
+      sha256.convert(utf8.encode('$_deviceId|$_sharedSecret')).toString();
+
+  /// 입력값이 유효한 마스터 인증키인지 검증만 수행 (활성화하지 않음).
+  /// 설정 화면의 개발자 전용 기능(웹훅 URL 변경) 진입 게이트에 사용한다.
+  bool verifyMasterPin(String inputPin) {
+    final normalized =
+        inputPin.replaceAll('-', '').replaceAll(' ', '').toUpperCase();
+    if (normalized.isEmpty) return false;
+    for (final master in _masterPins) {
+      final normMaster =
+          master.replaceAll('-', '').replaceAll(' ', '').toUpperCase();
+      if (normalized == normMaster) return true;
+    }
+    return false;
+  }
+
+  /// 마스터 PIN 검증 및 활성화 (방안 2 & 4)
   Future<bool> activateWithPin(
     String inputPin, {
     String userName = '',
@@ -100,25 +126,9 @@ class LicenseService extends ChangeNotifier {
     _isChecking = true;
     notifyListeners();
 
-    final normalizedPin = inputPin.replaceAll('-', '').replaceAll(' ', '').toUpperCase();
-    bool isPinValid = false;
-
-    // 1. 내장 마스터 PIN 검증
-    for (final master in _masterPins) {
-      final normMaster = master.replaceAll('-', '').replaceAll(' ', '').toUpperCase();
-      if (normalizedPin == normMaster) {
-        isPinValid = true;
-        break;
-      }
-    }
-
-    // 2. 해시 기반 동적 인증키 검증 (JUST로 시작하고 특정 체크섬을 만족하는 알고리즘)
-    if (!isPinValid && normalizedPin.startsWith('JUST')) {
-      final hash = sha256.convert(utf8.encode(normalizedPin)).toString();
-      if (hash.startsWith('0') || normalizedPin.length >= 8) {
-        isPinValid = true;
-      }
-    }
+    // 내장 마스터 인증키 목록과 정확히 일치할 때만 활성화한다.
+    // (2026-08-29: "JUST"로 시작하면 통과시키던 우회 분기를 제거)
+    final isPinValid = verifyMasterPin(inputPin);
 
     if (!isPinValid) {
       _isChecking = false;
@@ -158,6 +168,7 @@ class LicenseService extends ChangeNotifier {
       final uri = Uri.parse(_webhookUrl).replace(queryParameters: {
         'action': 'check_status',
         'device_id': _deviceId,
+        'sig': _requestSignature(),
       });
 
       final response = await http.get(uri).timeout(const Duration(seconds: 5));
@@ -175,6 +186,17 @@ class LicenseService extends ChangeNotifier {
           _status = LicenseStatus.active;
           await prefs.setString(_prefKeyStatus, 'active');
           notifyListeners();
+        } else if (remoteStatus == 'UNREGISTERED' &&
+            _status == LicenseStatus.active) {
+          // 활성 상태인데 관리 시트에 기록이 없는 경우(앱 데이터 삭제 후 재설치 등)
+          // 스스로 재등록하여 항상 원격 차단 대상이 되도록 한다.
+          final savedPin = prefs.getString(_prefKeyActivatedPin) ?? '';
+          await _sendTelemetry(
+            action: 'activate',
+            pin: savedPin,
+            userName: _userName,
+            affiliation: _userAffiliation,
+          );
         }
       }
     } catch (e) {
@@ -201,7 +223,8 @@ class LicenseService extends ChangeNotifier {
         'os': Platform.operatingSystem,
         'os_version': Platform.operatingSystemVersion,
         'timestamp': DateTime.now().toIso8601String(),
-        'app_version': '2.0.0',
+        'app_version': appVersion,
+        'sig': _requestSignature(),
       };
 
       await http.post(

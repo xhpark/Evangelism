@@ -259,13 +259,19 @@ class StudyProvider extends ChangeNotifier {
     }
     // 4. [전체 전문(1~8) 완주 재생 모드]
     else if (_playMode == PlayMode.allSequentialPlay) {
-      for (var secIdx = _selectedSectionIndex; secIdx < _sections.length; secIdx++) {
+      // 시작 위치는 '재생을 시작한 그 챕터'에만 적용한다.
+      // (2026-08-29: 루프 안에서 _selectedSectionIndex를 먼저 대입하는 바람에
+      //  모든 챕터가 fromIndex부터 시작해 앞 문장들이 통째로 건너뛰던 문제를 수정)
+      final startSectionIndex = _selectedSectionIndex;
+
+      for (var secIdx = startSectionIndex; secIdx < _sections.length; secIdx++) {
         if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
         _selectedSectionIndex = secIdx;
         notifyListeners();
 
         final steps = _sections[secIdx].steps;
-        final startIdx = (secIdx == _selectedSectionIndex) ? fromIndex : 0;
+        final isStartSection = (secIdx == startSectionIndex);
+        final startIdx = isStartSection ? fromIndex.clamp(0, steps.length) : 0;
 
         for (var stepIdx = startIdx; stepIdx < steps.length; stepIdx++) {
           if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
@@ -273,7 +279,7 @@ class StudyProvider extends ChangeNotifier {
           _activeStepId = s.stepId;
           notifyListeners();
 
-          final text = (secIdx == _selectedSectionIndex && stepIdx == fromIndex && initialText != null)
+          final text = (isStartSection && stepIdx == startIdx && initialText != null)
               ? initialText
               : s.effectiveScript;
 

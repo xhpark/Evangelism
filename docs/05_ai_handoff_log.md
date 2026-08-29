@@ -17,7 +17,8 @@
 | 상태 관리 | Provider (MVVM), `lib/main.dart`의 `MultiProvider`에 **6종** 등록 |
 | 대본 원본 | `data/just_ee_data.json` — 8개 섹션 / **총 40문장** |
 | 성경 암송 덱 | `lib/services/scripture_deck_engine.dart` — **8구절 하드코딩** |
-| 검증 명령 | `flutter analyze` (경고 0건 유지) / `flutter test` (**30개** 통과) |
+| 전환문장 6개 | `data/just_ee_data.json`의 `transition_text` 필드 (하드코딩 아님) |
+| 검증 명령 | `flutter analyze` (경고 0건 유지) / `flutter test` (**42개** 통과) |
 | 문서 | `README.md`, `docs/01`~`docs/04`, 그리고 본 문서 |
 
 ---
@@ -98,12 +99,107 @@ flutter test     →  +30: All tests passed!
 
 ---
 
-## 2. 이 저장소에서 작업하는 AI를 위한 규칙
+## 2. 2026-08-29 작업 기록 (2차) — 전면 점검 및 보안·안정성 보강
+
+**작업 주체:** Claude Code (Opus 5) / **의뢰인:** 박상환
+**작업 시작 시점의 HEAD:** `caa7d90` (1차 문서 동기화 커밋)
+**의뢰 내용:** 앱 전반을 안정성·운영성·연동성 관점에서 점검하고, 제안 후 승인받아 적용할 것.
+
+### 2.1 점검 방법
+
+코드 7,872줄 + Android 설정 + Apps Script 백엔드를 통독하고, 추정으로 남을 항목은 임시 측정 코드를 작성해 실측했다(측정 후 삭제). 실측으로 확인한 값:
+
+* 인증키 우회: `JUSTABCD`, `JUST1234`, `JUSTINBIEBER`, `JUST-XXXX-YYYY` 모두 활성화 통과
+* 전체 완주 채점 소요: 동일 발화 19ms / 절반만 발화 **1,997ms** (원문 7,736자, UI 스레드 블로킹)
+* 정규화 부작용: `"이 사장님은 ... 일절 관여하지"` → `"이 4장님은 ... 1절 관여하지"`
+* 전환문장: 엔진 하드코딩 6개 vs 데이터 `is_transition` 5개, 6번째는 문장 내용 자체가 상이
+
+### 2.2 의뢰인이 결정한 정책 (임의로 바꾸지 말 것)
+
+| 항목 | 결정 |
+| :--- | :--- |
+| 적용 범위 | S1(보안)~S5(운영) **전부 적용** |
+| 전환문장 정합 | 데이터에 `transition_text` 필드를 추가해 **단일 출처화** (엔진 하드코딩 제거) |
+| 채점 엄격도 | **중간** — 조사·어미 차이는 정답, 다른 단어는 오답 |
+| 저작권 동의 게이트 | **매 실행마다 유지** (1회 저장으로 바꾸지 말 것) |
+
+### 2.3 보안 (S1)
+
+| 조치 | 파일 |
+| :--- | :--- |
+| `"JUST"` 접두 인증키 우회 분기 삭제 — 내장 키 정확 일치만 허용 | `lib/services/license_service.dart` |
+| 요청 서명 `sig = sha256("<UUID>\|<공유시크릿>")` 도입, 백엔드에서 검증 | 앱 `license_service.dart` + `scripts/google_apps_script_backend.js` |
+| 백엔드가 `MASTER_PINS`를 실제로 검증 (이전에는 선언만 하고 미사용) | `scripts/google_apps_script_backend.js` |
+| `LockService`, `getSheetByName("licenses")` 적용 (중복행·오시트 기록 방지) | 동상 |
+| 웹훅 URL 변경에 마스터 인증키 재확인 게이트 + `https://...google.com` 형식 검증 | `lib/screens/settings_screen.dart` |
+| `allowBackup="false"` + `data_extraction_rules.xml` (백업 복제 차단) | `android/app/src/main/...` |
+| `UNREGISTERED` 응답 시 자가 재등록, 포그라운드 복귀마다 킬스위치 재확인, 사용 중 차단 시 즉시 차단 화면 | `license_service.dart`, `main_navigation_screen.dart` |
+
+> ⚠️ **공유 시크릿을 바꾸려면 앱(`_sharedSecret`)과 Apps Script(`SHARED_SECRET`)를 함께 바꾸고 재배포해야 한다.**
+> ⚠️ **사장님이 Apps Script를 시트에 다시 붙여넣고 재배포해야 백엔드 개정이 실제로 적용된다.**
+
+### 2.4 기능 오작동 (S2)
+
+* **전체 완주 재생 챕터 건너뜀**: `study_provider.dart`에서 루프 안에 `_selectedSectionIndex`를 먼저 대입해 `startIdx` 조건이 항상 참이던 버그 수정. 시작 챕터에만 `fromIndex`를 적용한다. (회귀 테스트 `TS-PLAY-001`)
+* **STT 래퍼 싱글턴화**: `speech_to_text`는 싱글턴이고 `initialize()`가 최초 1회만 콜백을 등록하므로, 탭마다 래퍼를 만들면 나중 것이 상태 콜백을 못 받아 '인식 중'에서 멈췄다. `STTService`를 싱글턴으로 바꾸고 콜백을 **수음 시작 시점에 소유자가 주입**하는 구조로 변경.
+* **장문 수음 자동 재개**: 침묵 4초로 인식기가 멈추면 지금까지의 결과에 이어서 자동 재개(`keepAlive`, 최대 60회). 문서가 홍보하던 "세그먼트 스티칭"이 실제로 동작하게 됐다.
+* **한국어 로케일 고정**: `listen()`에 단말의 한국어 로케일을 지정 (이전에는 단말 기본 로케일).
+* **전환문장 단일 출처화**: `TransitionSentenceEngine`을 `buildFromSections(sections)`로 재작성. 목록과 대본이 어긋나지 않는지 `TS-TRANS-002`가 검증한다.
+* **대본 수정 전파**: 설정에서 문장 수정·간증 저장·TXT 일괄 반영 시 학습 탭뿐 아니라 순발력 덱(`refreshFromRepository`)과 실전시험 문항까지 갱신.
+* **배속 표기 정합**: 안드로이드 `flutter_tts`가 값을 2배로 넘기는 점을 반영해 `_platformRate = 표시배속 / 2`로 단순화. 이전에는 1.0으로 잘려 2.5x가 실제 2.0x였다.
+* **탭/백그라운드 전환 시 오디오 중재**: 탭 이동·앱 백그라운드 시 TTS 정지 + STT 취소.
+
+### 2.5 안정성·성능 (S3)
+
+* 긴 지문 채점을 `compute()` 아이솔레이트로 이전 (`ScoringEngine.calculateScoreAsync`, 임계값 800자). 채점 중 "채점 중입니다..." 표시.
+* 시험 이력 상한 50건 (`ScriptRepository.maxExamHistory`) — 무제한 누적 시 저장할 때마다 전량 재직렬화되던 문제.
+* 기동 실패 시 `StartupErrorApp` 안내 화면 (이전에는 흰 화면으로 종료).
+* 마이크/인식 실패 사유를 한국어로 변환해 화면에 배너 노출 (`sttError`).
+* 순발력 타이머 50ms → 100ms (초당 리빌드 20회 → 10회).
+* 미사용 의존성 `permission_handler` 제거.
+
+### 2.6 채점 품질 (S4)
+
+* 부분 일치 규칙 교체: "앞 2글자만 겹치면 정답" → `ScoringEngine.isSameWordStem()` (조사 제거 후 어간 비교 + 접두 관계). `TS-SCORE-004`가 고정.
+* 정규화기 재작성: 지시어 `그/이/저/아/에/막`을 간투사 목록에서 제외, 장/절 수사는 **어절 전체가 수사+장/절일 때만** 변환하고 `일절`·`사장` 등은 예외 처리. `십육`·`이십삼` 같은 조합 수사를 파서로 처리. `TS-NORM-004/005`가 고정.
+* "Myers Diff" 표현을 실제 알고리즘(어절 lookahead 그리디 정렬)에 맞춰 코드 주석·문서·UI에서 정정.
+* 순발력 반응시각을 음성 에너지 감지 시점 기준으로 잡고, UI에 "(음성 감지 기준)"으로 명시.
+
+### 2.7 운영·배포 (S5)
+
+* `android/key.properties`가 있으면 릴리스 키로 서명하고 없으면 경고 후 디버그 키 폴백 (`android/app/build.gradle.kts`). **배포용 APK를 만들기 전에 키스토어를 생성해야 한다.**
+  ```
+  keytool -genkey -v -keystore D:/keys/just-ee-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias just-ee
+  ```
+  그 뒤 `android/key.properties`에 `storeFile`, `storePassword`, `keyAlias`, `keyPassword`를 기입한다. 이 파일과 `.jks`는 `.gitignore`에 등록되어 있으니 **절대 커밋하지 말 것.**
+* 텔레메트리 `app_version` 하드코딩 제거 → `LicenseService.appVersion` 상수 (pubspec의 version과 함께 갱신).
+* GitHub Actions CI 추가 (`.github/workflows/flutter-ci.yml`): push/PR마다 `flutter analyze` + `flutter test`.
+* `ocr_1.txt` 추적 해제(로컬 파일은 유지), `.gitignore`에 키·산출물 규칙 추가.
+
+### 2.8 검증 결과
+
+```
+flutter analyze         →  No issues found!
+flutter test            →  +42: All tests passed!   (14개 파일)
+flutter build apk --debug →  √ Built buildpp\outputslutter-apkpp-debug.apk
+```
+
+**실기기 검증은 하지 않았다.** TTS 배속·STT 자동 재개·마이크 오류 안내·탭 전환 중재·원격 차단 즉시 반영은 에뮬레이터/단위 테스트로 확인할 수 없다.
+`docs/03_integration_test_plan.md`에 `IT-08` ~ `IT-16`으로 **미검증** 상태를 명시해 두었으니, Galaxy S24 Ultra에서 확인한 뒤 PASS로 갱신할 것.
+
+---
+
+## 3. 이 저장소에서 작업하는 AI를 위한 규칙
 
 1. **문서와 코드가 다르면 코드가 정답입니다.** 단, 사용자 노출 문구(문장 수 등)가 데이터와 어긋나면 그것은 코드 버그이니 데이터 기준으로 고치십시오.
 2. **되살리면 안 되는 기능**: 즉석 양육 마스터 화면 계열(§1.2), 대본 일괄 복원 버튼. 둘 다 의도적으로 제거되었습니다.
 3. **문서에 실제 마스터 인증키·웹훅 비밀 값을 쓰지 마십시오.** (§1.5)
 4. **숫자를 문서에 쓸 때는 반드시 실측하십시오.** 문장 수는 `data/just_ee_data.json`, 구절 수는 `scripture_deck_engine.dart`, 테스트 수는 `flutter test` 실행 결과가 근거입니다.
 5. **작업을 마치면 `flutter analyze`와 `flutter test`를 모두 돌리고, 그 출력을 근거로만 "통과"를 주장하십시오.**
-6. **코드를 바꿨으면 관련 문서(README, `docs/01`~`docs/04`)를 같은 작업 안에서 갱신하고, 이 문서 §1 형식으로 새 절을 추가하십시오.**
+6. **코드를 바꿨으면 관련 문서(README, `docs/01`~`docs/04`)를 같은 작업 안에서 갱신하고, 이 문서에 새 절을 추가하십시오.**
 7. 원문(복음 제시 전문) 텍스트는 사단법인 한국전도폭발본부 저작물입니다. 임의로 문구를 창작·윤색하지 마십시오.
+8. **되돌리면 안 되는 보안 조치** (§2.3): 인증키 우회 분기 복원 금지, 웹훅 URL 게이트 제거 금지, `allowBackup="false"` 해제 금지, 요청 서명 검증 제거 금지. 회귀 테스트 `TS-SEC-001`이 우회 복원을 막고 있습니다.
+9. **의뢰인이 정한 정책** (§2.2): 채점은 '중간' 엄격도, 저작권 동의 게이트는 매 실행 유지, 전환문장은 데이터 단일 출처. 바꾸려면 의뢰인 승인을 받으십시오.
+10. **STT는 싱글턴입니다.** 탭마다 `STTService()`를 새로 만들지 마십시오(이미 factory로 같은 인스턴스가 반환됩니다). 콜백은 `startListening()` 호출 시 주입하는 방식만 사용하십시오.
+11. **문장 수·구절 수 같은 숫자를 UI 문자열에 하드코딩하지 마십시오.** 데이터에서 세어 쓰십시오(과거 "38문장" 오류의 원인).
+12. **실기기에서만 확인 가능한 항목은 문서에 '미검증'으로 남기십시오.** 확인하지 않은 것을 PASS로 적지 마십시오.

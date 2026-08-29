@@ -303,6 +303,60 @@ class _ExamTakingTabView extends StatelessWidget {
             ),
           const SizedBox(height: 20),
 
+          // 마이크/음성 인식 오류 안내
+          if (exam.sttError != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.mic_off_outlined, size: 18, color: AppTheme.accentRed),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      exam.sttError!,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.4),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: exam.clearSttError,
+                    tooltip: "닫기",
+                  ),
+                ],
+              ),
+            ),
+
+          // 채점 진행 표시 (전체 완주 시험은 지문이 길어 수 초가 걸릴 수 있음)
+          if (exam.isScoring)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 10),
+                  Text("채점 중입니다...", style: TextStyle(fontSize: 12, color: AppTheme.primaryBlue)),
+                ],
+              ),
+            ),
+
           // 3. 마이크 수음 버튼 & 실시간 음성인식 스트리밍
           Center(
             child: SpeechLevelIndicator(

@@ -1,0 +1,30 @@
+# 전도폭발 JUST EE - 기본 품질 게이트
+# 코드가 푸시되거나 PR이 올라오면 정적 분석과 단위/위젯 테스트를 자동 실행한다.
+name: Flutter CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 의존성 설치
+        run: flutter pub get
+
+      - name: 정적 분석 (경고 0건 유지)
+        run: flutter analyze
+
+      - name: 단위 · 위젯 테스트
+        run: flutter test

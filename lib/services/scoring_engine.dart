@@ -1,9 +1,65 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import '../models/diff_token.dart';
 import '../models/exam_result_model.dart';
 import 'korean_text_normalizer.dart';
 
+/// 별도 아이솔레이트로 넘길 채점 요청 묶음
+class ScoreRequest {
+  final String examId;
+  final String title;
+  final String originalText;
+  final String spokenText;
+  final List<String> keywords;
+  final List<ExamAreaScore>? areaScores;
+
+  const ScoreRequest({
+    required this.examId,
+    required this.title,
+    required this.originalText,
+    required this.spokenText,
+    this.keywords = const [],
+    this.areaScores,
+  });
+}
+
+ExamResult _scoreInIsolate(ScoreRequest req) => ScoringEngine.calculateScore(
+      examId: req.examId,
+      title: req.title,
+      originalText: req.originalText,
+      spokenText: req.spokenText,
+      keywords: req.keywords,
+      areaScores: req.areaScores,
+    );
+
 class ScoringEngine {
+  /// 긴 지문은 편집거리 계산이 O(n×m)이라 UI 스레드를 수 초간 멈춘다.
+  /// 이 길이를 넘으면 별도 아이솔레이트에서 채점한다.
+  static const int _isolateThresholdChars = 800;
+
+  /// 화면을 멈추지 않는 채점 진입점. 짧은 지문은 그대로, 긴 지문은 아이솔레이트에서 계산한다.
+  static Future<ExamResult> calculateScoreAsync({
+    required String examId,
+    required String title,
+    required String originalText,
+    required String spokenText,
+    List<String> keywords = const [],
+    List<ExamAreaScore>? areaScores,
+  }) async {
+    final req = ScoreRequest(
+      examId: examId,
+      title: title,
+      originalText: originalText,
+      spokenText: spokenText,
+      keywords: keywords,
+      areaScores: areaScores,
+    );
+
+    if (originalText.length + spokenText.length <= _isolateThresholdChars) {
+      return _scoreInIsolate(req);
+    }
+    return compute(_scoreInIsolate, req);
+  }
   /// 종합 점수 및 Diff 토큰 생성
   static ExamResult calculateScore({
     required String examId,
@@ -50,10 +106,9 @@ class ScoringEngine {
       if (spokenSet.contains(w)) {
         matchedWordCount++;
       } else {
-        // 형태소/어근 부분 일치 검사 (3자 이상 시 2글자 겹침)
-        bool partialMatch = spokenWords.any((sw) =>
-            (w.length >= 3 && sw.contains(w.substring(0, 2))) ||
-            (sw.length >= 3 && w.contains(sw.substring(0, 2))));
+        // 조사/어미 차이만 있는 경우에만 정답으로 인정한다.
+        // (2026-08-29: "앞 2글자만 겹치면 정답" 규칙은 오답을 정답으로 세어 제거)
+        final partialMatch = spokenWords.any((sw) => isSameWordStem(w, sw));
         if (partialMatch) matchedWordCount++;
       }
     }
@@ -82,7 +137,7 @@ class ScoringEngine {
     }
     finalScore = finalScore.clamp(0.0, 100.0);
 
-    // 5. Diff 토큰 생성 (Myers Diff 기반 정렬)
+    // 5. Diff 토큰 생성 (어절 단위 lookahead 정렬 방식)
     final diffTokens = _generateDiffTokens(origWords, spokenWords);
 
     return ExamResult(
@@ -97,6 +152,47 @@ class ScoringEngine {
       diffTokens: diffTokens,
       areaScores: areaScores,
     );
+  }
+
+  /// 한국어 조사 목록 (긴 것부터 검사)
+  static const List<String> _josa = [
+    '으로서', '으로써', '이라고', '라고는', '에게서', '으로', '에서', '에게', '한테',
+    '까지', '부터', '보다', '처럼', '마다', '이라', '라도', '이나', '나마', '조차',
+    '만을', '만은', '으로', '와의', '과의', '들이', '들을',
+    '은', '는', '이', '가', '을', '를', '에', '의', '도', '만', '과', '와', '로', '야',
+  ];
+
+  /// 어간이 같은 단어인지 판정한다.
+  /// - 완전히 같으면 참
+  /// - 한쪽이 다른 쪽의 접두(앞부분)이고 길이 차가 2 이하이면 참 ("주시" ↔ "주시는")
+  /// - 조사만 떼어낸 어간이 같으면 참 ("영생은" ↔ "영생을")
+  /// 그 외에는 서로 다른 단어로 본다. ("선물입니다" ↔ "선반입니다"는 오답)
+  static bool isSameWordStem(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return false;
+    if (a == b) return true;
+
+    final shorter = a.length <= b.length ? a : b;
+    final longer = a.length <= b.length ? b : a;
+    if (shorter.length >= 2 &&
+        longer.startsWith(shorter) &&
+        longer.length - shorter.length <= 2) {
+      return true;
+    }
+
+    final stemA = _stripJosa(a);
+    final stemB = _stripJosa(b);
+    if (stemA.length >= 2 && stemA == stemB) return true;
+
+    return false;
+  }
+
+  static String _stripJosa(String word) {
+    for (final j in _josa) {
+      if (word.length > j.length + 1 && word.endsWith(j)) {
+        return word.substring(0, word.length - j.length);
+      }
+    }
+    return word;
   }
 
   /// Levenshtein Distance
@@ -129,6 +225,9 @@ class ScoringEngine {
   }
 
   /// 단어별 Diff 토큰 정렬 생성
+  ///
+  /// 정통 Myers Diff가 아니라, 앞으로 3어절까지 살펴보며 맞춰가는 그리디 정렬이다.
+  /// (문서·UI 표기도 '어절 대조'로 통일했다 — 2026-08-29)
   static List<DiffToken> _generateDiffTokens(
       List<String> origWords, List<String> spokenWords) {
     final tokens = <DiffToken>[];
@@ -143,7 +242,7 @@ class ScoringEngine {
         tokens.add(DiffToken(text: oWord, type: DiffType.matched));
         oIdx++;
         sIdx++;
-      } else if (oWord.contains(sWord) || sWord.contains(oWord)) {
+      } else if (isSameWordStem(oWord, sWord)) {
         tokens.add(DiffToken(
             text: sWord,
             type: DiffType.matched,

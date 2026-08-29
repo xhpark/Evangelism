@@ -21,6 +21,8 @@ class VoiceExamProvider extends ChangeNotifier {
   ExamResult? _lastResult;
   List<ExamResult> _history = [];
   bool _isLoading = false;
+  bool _isScoring = false;
+  String? _sttError;
 
   VoiceExamProvider(this._repository) {
     _init();
@@ -35,6 +37,15 @@ class VoiceExamProvider extends ChangeNotifier {
   ExamResult? get lastResult => _lastResult;
   List<ExamResult> get history => _history;
   bool get isLoading => _isLoading;
+  bool get isScoring => _isScoring;
+
+  /// 마이크/음성 인식 실패 사유 (없으면 null)
+  String? get sttError => _sttError;
+
+  void clearSttError() {
+    _sttError = null;
+    notifyListeners();
+  }
 
   void setDifficulty(TriggerDifficulty diff) {
     _difficulty = diff;
@@ -42,24 +53,7 @@ class VoiceExamProvider extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    await _stt.initialize();
     _history = await _repository.getExamHistory();
-
-    _stt.onResultChanged = (text) {
-      _liveSpokenText = text;
-      notifyListeners();
-    };
-
-    _stt.onSoundLevelChanged = (level) {
-      _soundLevel = level;
-      notifyListeners();
-    };
-
-    _stt.onListeningStopped = () {
-      _isListening = false;
-      notifyListeners();
-    };
-
     await generateNewQuestion();
   }
 
@@ -86,16 +80,46 @@ class VoiceExamProvider extends ChangeNotifier {
   }
 
   /// 시험 녹음 시작 (STT)
+  ///
+  /// 실전 시험은 한 문항이 길기 때문에 [keepAlive]로 수음을 유지한다.
+  /// 숨을 고르느라 4초 이상 쉬어 인식기가 멈춰도 지금까지의 인식 결과에 이어서 자동 재개된다.
   Future<void> startExamRecording() async {
     if (_currentQuestion == null) await generateNewQuestion();
 
     _liveSpokenText = '';
     _lastResult = null;
+    _sttError = null;
     _isListening = true;
     notifyListeners();
 
     await DeviceHelperService.enableKeepScreenOn();
-    await _stt.startListening(clearBuffer: true);
+
+    final started = await _stt.startListening(
+      keepAlive: true,
+      onResult: (text) {
+        _liveSpokenText = text;
+        notifyListeners();
+      },
+      onLevel: (level) {
+        _soundLevel = level;
+        notifyListeners();
+      },
+      onStopped: () {
+        _isListening = false;
+        notifyListeners();
+      },
+      onError: (message) {
+        _sttError = message;
+        _isListening = false;
+        notifyListeners();
+      },
+    );
+
+    if (!started) {
+      _isListening = false;
+      await DeviceHelperService.disableKeepScreenOn();
+      notifyListeners();
+    }
   }
 
   /// 시험 녹음 정지 및 자동 채점
@@ -106,6 +130,15 @@ class VoiceExamProvider extends ChangeNotifier {
 
     if (_currentQuestion == null) return;
 
+    if (_liveSpokenText.trim().isEmpty) {
+      _sttError = '인식된 음성이 없어 채점하지 않았습니다. 마이크 권한과 주변 소음을 확인한 뒤 다시 시도해 주세요.';
+      notifyListeners();
+      return;
+    }
+
+    _isScoring = true;
+    notifyListeners();
+
     List<ExamAreaScore>? areaBreakdown;
     if (_selectedMode == ExamMode.fullSequential) {
       areaBreakdown = RandomExamEngine.calculate5AreaBreakdown(
@@ -114,7 +147,9 @@ class VoiceExamProvider extends ChangeNotifier {
       );
     }
 
-    final result = ScoringEngine.calculateScore(
+    // 전체 완주 시험은 지문이 7,000자를 넘어 편집거리 계산이 무겁다.
+    // 별도 아이솔레이트에서 채점해 화면이 멈추지 않도록 한다.
+    final result = await ScoringEngine.calculateScoreAsync(
       examId: 'exam_${DateTime.now().millisecondsSinceEpoch}',
       title: _currentQuestion!.title,
       originalText: _currentQuestion!.originalText,
@@ -127,12 +162,14 @@ class VoiceExamProvider extends ChangeNotifier {
     await _repository.saveExamResult(result);
     _history = await _repository.getExamHistory();
 
+    _isScoring = false;
     notifyListeners();
   }
 
   /// 녹음 취소
   Future<void> cancelExam() async {
     _isListening = false;
+    _sttError = null;
     await _stt.cancel();
     await DeviceHelperService.disableKeepScreenOn();
     _liveSpokenText = '';

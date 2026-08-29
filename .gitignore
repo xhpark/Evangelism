@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# 배포 서명 키 (절대 커밋 금지)
+android/key.properties
+**/*.jks
+**/*.keystore
+
+# OCR 원본 텍스트 등 작업용 산출물
+ocr_1.txt
+probe_out.txt

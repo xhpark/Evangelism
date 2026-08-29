@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/study_provider.dart';
+import '../providers/quick_trigger_provider.dart';
+import '../providers/voice_exam_provider.dart';
+import '../services/license_service.dart';
 import 'study_screen.dart';
 import 'quick_trigger_screen.dart';
 import 'scripture_deck_screen.dart';
 import 'voice_exam_screen.dart';
 import 'settings_screen.dart';
+import 'blocked_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -12,7 +18,8 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class _MainNavigationScreenState extends State<MainNavigationScreen>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
@@ -24,7 +31,46 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // 앱이 다시 포그라운드로 올라올 때마다 원격 승인 상태를 재확인한다.
+      context.read<LicenseService>().checkRemoteKillSwitch();
+    } else if (state == AppLifecycleState.paused) {
+      // 백그라운드로 내려가면 재생/수음을 정지해 배터리와 오인식을 방지한다.
+      _stopAllAudioSessions();
+    }
+  }
+
+  /// 탭 이동/백그라운드 전환 시 TTS 재생과 STT 수음을 모두 정지한다.
+  /// (IndexedStack 특성상 이전 탭이 살아 있어 학습 재생과 시험 수음이 겹칠 수 있음)
+  void _stopAllAudioSessions() {
+    context.read<StudyProvider>().stopAudio();
+    final quick = context.read<QuickTriggerProvider>();
+    if (quick.isListening) quick.abortListening();
+    final exam = context.read<VoiceExamProvider>();
+    if (exam.isListening) exam.cancelExam();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // 사용 중 원격 차단이 걸리면 즉시 차단 화면으로 전환된다.
+    final license = context.watch<LicenseService>();
+    if (license.isBlocked) {
+      return const BlockedScreen();
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -33,6 +79,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
+          if (index != _currentIndex) {
+            _stopAllAudioSessions();
+          }
           setState(() {
             _currentIndex = index;
           });

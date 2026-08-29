@@ -23,6 +23,11 @@ class StepItem {
   final String? leadInText;
   final bool isTransition;
 
+  /// 이 단락 안에서 '다음 대지로 넘어가는 순수 전환문장'만 따로 뽑아둔 값.
+  /// 순발력 탭의 전환문장 덱과 학습 대본이 서로 어긋나지 않도록 데이터에서 함께 관리한다.
+  final String? transitionText;
+  final List<String> transitionKeywords;
+
   StepItem({
     required this.stepId,
     required this.name,
@@ -34,7 +39,25 @@ class StepItem {
     this.keywords = const [],
     this.leadInText,
     this.isTransition = false,
+    this.transitionText,
+    this.transitionKeywords = const [],
   });
+
+  /// 사용자가 대본을 수정하면 수정본에서 전환문장을 다시 찾아 반환한다.
+  /// (수정본에 원래 전환문장이 남아 있지 않으면 마지막 문장을 전환문장으로 본다.)
+  String get effectiveTransitionText {
+    final base = transitionText;
+    final current = effectiveScript;
+
+    if (base == null || base.isEmpty) return current;
+    if (current.contains(base)) return base;
+
+    final sentences = current
+        .split(RegExp(r'(?<=[.!?])\s+'))
+        .where((e) => e.trim().isNotEmpty)
+        .toList();
+    return sentences.isNotEmpty ? sentences.last.trim() : current;
+  }
 
   String get effectiveScript => (customScript != null && customScript!.trim().isNotEmpty)
       ? customScript!
@@ -51,6 +74,8 @@ class StepItem {
     List<String>? keywords,
     String? leadInText,
     bool? isTransition,
+    String? transitionText,
+    List<String>? transitionKeywords,
   }) {
     return StepItem(
       stepId: stepId ?? this.stepId,
@@ -63,6 +88,8 @@ class StepItem {
       keywords: keywords ?? this.keywords,
       leadInText: leadInText ?? this.leadInText,
       isTransition: isTransition ?? this.isTransition,
+      transitionText: transitionText ?? this.transitionText,
+      transitionKeywords: transitionKeywords ?? this.transitionKeywords,
     );
   }
 
@@ -77,6 +104,9 @@ class StepItem {
         'keywords': keywords,
         if (leadInText != null) 'lead_in_text': leadInText,
         'is_transition': isTransition,
+        if (transitionText != null) 'transition_text': transitionText,
+        if (transitionKeywords.isNotEmpty)
+          'transition_keywords': transitionKeywords,
       };
 
   factory StepItem.fromJson(Map<String, dynamic> json) {
@@ -91,6 +121,12 @@ class StepItem {
     List<String> parsedKeywords = [];
     if (rawKeywords is List) {
       parsedKeywords = rawKeywords.map((e) => e.toString()).toList();
+    }
+
+    final rawTransKeywords = json['transition_keywords'];
+    List<String> parsedTransKeywords = [];
+    if (rawTransKeywords is List) {
+      parsedTransKeywords = rawTransKeywords.map((e) => e.toString()).toList();
     }
 
     final scriptText = json['script'] as String? ?? '';
@@ -116,6 +152,8 @@ class StepItem {
       keywords: parsedKeywords,
       leadInText: leadIn,
       isTransition: isTrans,
+      transitionText: json['transition_text'] as String?,
+      transitionKeywords: parsedTransKeywords,
     );
   }
 }

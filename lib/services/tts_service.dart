@@ -108,7 +108,7 @@ class TTSService {
       _pitch = prefs.getDouble(_prefPitchKey) ?? 1.0;
 
       await _tts.setLanguage('ko-KR');
-      await _tts.setSpeechRate(0.5);
+      await _tts.setSpeechRate(_platformRate(_speedRate));
       await _tts.setPitch(_pitch);
       await _tts.awaitSpeakCompletion(true);
 
@@ -262,8 +262,7 @@ class TTSService {
     try {
       await _tts.setLanguage('ko-KR');
       await _tts.setPitch(_pitch);
-      final adjustedRate = (0.50 + (_speedRate - 1.0) * 0.35).clamp(0.25, 1.0);
-      await _tts.setSpeechRate(adjustedRate);
+      await _tts.setSpeechRate(_platformRate(_speedRate));
       if (_selectedVoiceName.isNotEmpty && _availableVoices.isNotEmpty) {
         final match = _availableVoices.where((v) => v.name == _selectedVoiceName);
         if (match.isNotEmpty) {
@@ -282,11 +281,23 @@ class TTSService {
     await _tts.speak(sample);
   }
 
+  /// 화면에 표시하는 배속(1.0x = 보통 속도)을 flutter_tts 입력값으로 변환한다.
+  ///
+  /// 안드로이드 flutter_tts는 전달값을 2배로 곱해 `TextToSpeech.setSpeechRate()`에 넘긴다.
+  /// 따라서 표시 배속의 절반을 넘겨야 화면 표기와 실제 속도가 일치한다.
+  /// (2026-08-29: 이전 변환식은 1.0으로 잘려 2.5배속이 실제로는 2.0배가 최대였고
+  ///  1.5x는 1.35x, 2.0x는 1.7x로 재생되던 문제를 수정)
+  static double _platformRate(double displayRate) =>
+      (displayRate / 2.0).clamp(0.1, 1.5);
+
   /// 배속 설정 (0.8x, 1.0x, 1.5x, 2.0x, 2.5x)
   Future<void> setSpeedRate(double rate) async {
     _speedRate = rate.clamp(0.5, 3.0);
-    final adjustedRate = (0.50 + (_speedRate - 1.0) * 0.35).clamp(0.25, 1.0);
-    await _tts.setSpeechRate(adjustedRate);
+    try {
+      await _tts.setSpeechRate(_platformRate(_speedRate));
+    } catch (_) {
+      // 비네이티브(테스트) 환경에서는 무시
+    }
   }
 
   void setPlayMode(PlayMode mode) {

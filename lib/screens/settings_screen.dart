@@ -654,19 +654,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-
-            // 6. 기본 원문으로 초기화 버튼
-            Center(
-              child: TextButton.icon(
-                onPressed: () => _confirmResetDialog(context, provider, study),
-                icon: const Icon(Icons.restore, color: AppTheme.accentRed),
-                label: const Text(
-                  "교재 기본 대본으로 전체 복원",
-                  style: TextStyle(color: AppTheme.accentRed, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
             const SizedBox(height: 20),
           ],
         ),
@@ -767,40 +754,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (context.mounted) Navigator.pop(ctx);
             },
             child: const Text("저장 및 즉시 반영"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmResetDialog(
-    BuildContext context,
-    ScriptManageProvider provider,
-    StudyProvider study,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("기본값 복원"),
-        content: const Text("수정하신 모든 커스텀 대본을 초기화하고 표준 기본 대본으로 되돌리시겠습니까?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("취소"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed),
-            onPressed: () async {
-              await provider.resetAll();
-              await study.refresh();
-              if (context.mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("기본 대본으로 복원되었습니다.")),
-                );
-              }
-            },
-            child: const Text("초기화"),
           ),
         ],
       ),

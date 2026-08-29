@@ -279,15 +279,27 @@ class RandomExamEngine {
       List<Section> allSections) {
     final list = [
       _makeSingle(
-        title: "💬 서론: 제1 진단 질문 & 성경 기록 목적 (요일 5:13)",
-        instruction: "천국 확신 질문과 성경의 기록 목적(요일 5:13), 동행자 확신 공유 단락 전체를 암송하세요.",
+        title: "💬 서론: 제1 진단 질문 (천국 확신)",
+        instruction: "천국 확신 질문과 성경 소개 단락 전체를 암송하세요.",
         step: stepMap['intro_3'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "📜 서론 성경: 요한일서 5장 13절",
+        instruction: "성경 기록 목적을 증거하는 요한일서 5장 13절 말씀 전문을 암송하세요.",
+        step: stepMap['intro_4'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "💬 서론: 성경 기록 목적 및 팀원 확신 확인",
+        instruction: "성경 기록 목적과 동행 팀원 확신 확인 단락 전체를 암송하세요.",
+        step: stepMap['intro_5'],
         fallbackSection: allSections.first,
       ),
       _makeSingle(
         title: "💬 서론: 제2 진단 질문 & 복음 제시 허락",
         instruction: "천국 들어가는 이유 질문과 선한 행위 확인, 가장 기쁜 소식 허락 단락 전체를 암송하세요.",
-        step: stepMap['intro_4'],
+        step: stepMap['intro_6'],
         fallbackSection: allSections.first,
       ),
       _makeChain(

@@ -13,7 +13,7 @@ class ScriptureDeckScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("📖 핵심 성경 9구절 암송 덱"),
+        title: Text("📖 복음전문 핵심 ${provider.cards.length}구절 암송 덱"),
         actions: [
           IconButton(
             icon: Icon(

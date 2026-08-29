@@ -25,6 +25,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final provider = context.read<ScriptManageProvider>();
     _testimonyController.text = provider.userTestimony;
     _churchController.text = provider.userChurch;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<StudyProvider>().reloadVoices();
+      }
+    });
   }
 
   @override
@@ -79,136 +85,195 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             // 2. TTS 음성 목소리(Voice) 및 톤 설정 카드
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.record_voice_over, color: AppTheme.primaryBlue),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            "🎙️ TTS 음성 목소리(Voice) & 톤 설정",
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      "기계음이 어색하게 느껴지실 경우 스마트폰에 설치된 다양한 남성/여성 고음질 보이스 중 마음에 드는 목소리를 선택하세요.",
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                    ),
-                    const SizedBox(height: 14),
+            Consumer<StudyProvider>(
+              builder: (context, study, _) {
+                final voices = study.availableVoices;
+                final selectedVoice = study.selectedVoiceName;
+                final matched = voices.any((v) => v.name == selectedVoice);
+                final currentVoiceValue = matched
+                    ? selectedVoice
+                    : (voices.isNotEmpty ? voices.first.name : null);
 
-                    // 보이스 선택 드롭다운
-                    const Text(
-                      "한국어 목소리 종류",
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                        color: const Color(0xFFF8FAFC),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          isExpanded: true,
-                          value: study.availableVoices.any((v) => v.name == study.selectedVoiceName)
-                              ? study.selectedVoiceName
-                              : (study.availableVoices.isNotEmpty ? study.availableVoices.first.name : null),
-                          items: study.availableVoices.map((v) {
-                            return DropdownMenuItem<String>(
-                              value: v.name,
+                return Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.record_voice_over, color: AppTheme.primaryBlue),
+                            SizedBox(width: 8),
+                            Expanded(
                               child: Text(
-                                v.displayName,
-                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
+                                "🎙️ TTS 음성 목소리(Voice) & 톤 설정",
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val == null) return;
-                            final selected = study.availableVoices.firstWhere((v) => v.name == val);
-                            study.setTtsVoice(selected);
-                          },
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 음높이 (Pitch) 조절
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                        const SizedBox(height: 6),
                         const Text(
-                          "음높이 (톤 조절)",
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          "스마트폰에 설치된 다양한 남성/여성 한국어 보이스 중 마음에 드는 목소리와 음높이를 선택하세요.",
+                          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
                         ),
-                        Text(
-                          study.pitch <= 0.85
-                              ? "차분한 중저음 (${study.pitch.toStringAsFixed(2)})"
-                              : study.pitch >= 1.15
-                                  ? "밝은 고음 (${study.pitch.toStringAsFixed(2)})"
-                                  : "표준 톤 (${study.pitch.toStringAsFixed(2)})",
-                          style: const TextStyle(fontSize: 12, color: AppTheme.primaryBlue, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    Slider(
-                      value: study.pitch.clamp(0.7, 1.3),
-                      min: 0.7,
-                      max: 1.3,
-                      divisions: 12,
-                      label: study.pitch.toStringAsFixed(2),
-                      activeColor: AppTheme.primaryBlue,
-                      onChanged: (newPitch) {
-                        study.setTtsPitch(newPitch);
-                      },
-                    ),
-                    const SizedBox(height: 6),
+                        const SizedBox(height: 14),
 
-                    // 미리듣기 버튼 & 안드로이드 고음질 팁
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () => study.previewTtsVoice(),
-                          icon: const Icon(Icons.volume_up, size: 18),
-                          label: const Text("🔊 샘플 목소리 미리듣기"),
+                        // 보이스 선택 드롭다운
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "한국어 목소리 종류",
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                "선택 가능: ${voices.length}개",
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.shade200),
-                      ),
-                      child: const Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.tips_and_updates, color: Color(0xFFB45309), size: 18),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              "💡 더욱 자연스러운 사람 목소리를 원하시면 스마트폰 [설정 ➔ 일반 ➔ 글자 읽어주기(TTS) ➔ 기본 엔진(Google/삼성) 설정 ➔ 음성 데이터 설치]에서 '고음질 보이스'를 다운로드하시면 감탄할 만큼 부드러운 목소리로 들으실 수 있습니다.",
-                              style: TextStyle(fontSize: 11.5, height: 1.4, color: Color(0xFF78350F)),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFFF8FAFC),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: currentVoiceValue,
+                              hint: const Text("보이스를 불러오는 중..."),
+                              items: voices.map((v) {
+                                return DropdownMenuItem<String>(
+                                  value: v.name,
+                                  child: Text(
+                                    v.displayName,
+                                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) async {
+                                if (val == null) return;
+                                final target = voices.firstWhere((v) => v.name == val);
+                                await study.setTtsVoice(target);
+                              },
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 음높이 (Pitch) 조절
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "음높이 (톤 조절)",
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              study.pitch <= 0.85
+                                  ? "차분한 저음 (${study.pitch.toStringAsFixed(2)})"
+                                  : study.pitch >= 1.15
+                                      ? "밝은 고음 (${study.pitch.toStringAsFixed(2)})"
+                                      : "표준 톤 (${study.pitch.toStringAsFixed(2)})",
+                              style: const TextStyle(fontSize: 12, color: AppTheme.primaryBlue, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        Slider(
+                          value: study.pitch.clamp(0.7, 1.3),
+                          min: 0.7,
+                          max: 1.3,
+                          divisions: 12,
+                          label: study.pitch.toStringAsFixed(2),
+                          activeColor: AppTheme.primaryBlue,
+                          onChanged: (newPitch) {
+                            study.setTtsPitch(newPitch);
+                          },
+                        ),
+                        const SizedBox(height: 4),
+
+                        // 3가지 원터치 톤 프리셋 버튼
+                        Row(
+                          children: [
+                            _buildPitchPresetChip(
+                              label: "차분한 저음",
+                              targetPitch: 0.85,
+                              currentPitch: study.pitch,
+                              onTap: () => study.setTtsPitch(0.85),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildPitchPresetChip(
+                              label: "표준 톤",
+                              targetPitch: 1.0,
+                              currentPitch: study.pitch,
+                              onTap: () => study.setTtsPitch(1.0),
+                            ),
+                            const SizedBox(width: 8),
+                            _buildPitchPresetChip(
+                              label: "밝은 고음",
+                              targetPitch: 1.15,
+                              currentPitch: study.pitch,
+                              onTap: () => study.setTtsPitch(1.15),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 미리듣기 버튼 & 안드로이드 고음질 팁
+                        Row(
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryBlue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => study.previewTtsVoice(),
+                              icon: const Icon(Icons.volume_up, size: 18),
+                              label: const Text("🔊 변경된 목소리 즉시 미리듣기"),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.amber.shade200),
+                          ),
+                          child: const Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.tips_and_updates, color: Color(0xFFB45309), size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "💡 더욱 자연스러운 사람 목소리를 원하시면 스마트폰 [설정 ➔ 일반 ➔ 글자 읽어주기(TTS) ➔ 기본 엔진(Google/삼성) 설정 ➔ 음성 데이터 설치]에서 '고음질 보이스'를 다운로드하시면 감탄할 만큼 부드러운 목소리로 들으실 수 있습니다.",
+                                  style: TextStyle(fontSize: 11.5, height: 1.4, color: Color(0xFF78350F)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
 
@@ -696,6 +761,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPitchPresetChip({
+    required String label,
+    required double targetPitch,
+    required double currentPitch,
+    required VoidCallback onTap,
+  }) {
+    final isSelected = (currentPitch - targetPitch).abs() < 0.05;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryBlue : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade300,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.white : const Color(0xFF334155),
+          ),
+        ),
+      ),
     );
   }
 

@@ -137,6 +137,7 @@ class TTSService {
   }
 
   /// 기기에 설치된 한국어 TTS 보이스 목록 검색 및 로드
+  /// 기기에 설치된 한국어 TTS 보이스 목록 검색 및 로드
   Future<List<TTSVoiceInfo>> _loadAndSetKoreanVoices() async {
     try {
       final dynamic rawVoices = await _tts.getVoices;
@@ -148,15 +149,43 @@ class TTSService {
           if (v is Map) {
             final name = v['name']?.toString() ?? '';
             final locale = v['locale']?.toString() ?? '';
+            final lowerLocale = locale.toLowerCase().replaceAll('_', '-');
+            final lowerName = name.toLowerCase().replaceAll('_', '-');
 
-            if (locale.toLowerCase().contains('ko') || name.toLowerCase().contains('ko')) {
+            // 인도 콩카니어(kok / kok-IN) 제외 및 순수 한국어(ko / kor / ko-KR)만 추출
+            final isKorean = (lowerLocale.startsWith('ko-') ||
+                    lowerLocale == 'ko' ||
+                    lowerLocale.startsWith('kor') ||
+                    lowerName.contains('ko-kr') ||
+                    lowerName.contains('kokr')) &&
+                !lowerLocale.startsWith('kok') &&
+                !lowerName.contains('kok-in') &&
+                !lowerName.contains('kok');
+
+            if (isKorean) {
               String friendlyName;
-              if (name.contains('koc') || name.contains('woman') || name.contains('female')) {
-                friendlyName = "보이스 $index (자연스러운 여성 톤)";
-              } else if (name.contains('kod') || name.contains('ism') || name.contains('male')) {
-                friendlyName = "보이스 $index (신뢰감 있는 남성 톤)";
+              if (lowerName.contains('koc') || lowerName.contains('female1') || lowerName.contains('f00')) {
+                friendlyName = "보이스 $index (구글 자연스러운 여성 톤 C)";
+              } else if (lowerName.contains('kob') || lowerName.contains('female2') || lowerName.contains('f01')) {
+                friendlyName = "보이스 $index (구글 부드러운 여성 톤 B)";
+              } else if (lowerName.contains('koe')) {
+                friendlyName = "보이스 $index (구글 차분한 여성 톤 E)";
+              } else if (lowerName.contains('kod') || lowerName.contains('male1') || lowerName.contains('m00')) {
+                friendlyName = "보이스 $index (구글 신뢰감 있는 남성 톤 D)";
+              } else if (lowerName.contains('ism')) {
+                friendlyName = "보이스 $index (구글 또렷한 남성 톤 A)";
+              } else if (lowerName.contains('kof')) {
+                friendlyName = "보이스 $index (구글 중후한 남성 톤 F)";
+              } else if (lowerName.contains('smt')) {
+                friendlyName = "보이스 $index (삼성 고품질 보이스)";
+              } else if (lowerName.contains('language') || lowerName.contains('default')) {
+                friendlyName = "보이스 $index (삼성 기본 보이스)";
+              } else if (lowerName.contains('woman') || lowerName.contains('female')) {
+                friendlyName = "보이스 $index (한국어 여성 톤)";
+              } else if (lowerName.contains('man') || lowerName.contains('male')) {
+                friendlyName = "보이스 $index (한국어 남성 톤)";
               } else {
-                friendlyName = "보이스 $index ($name)";
+                friendlyName = "보이스 $index (한국어 표준 보이스)";
               }
 
               list.add(TTSVoiceInfo(
@@ -172,7 +201,7 @@ class TTSService {
 
       if (list.isEmpty) {
         list.add(TTSVoiceInfo(
-          name: 'ko-KR-default',
+          name: 'ko-kr-default',
           locale: 'ko-KR',
           displayName: '기본 고품질 한국어 보이스',
         ));
@@ -180,11 +209,18 @@ class TTSService {
 
       _availableVoices = list;
 
-      // 저장된 보이스가 목록에 있으면 적용, 없으면 첫 번째 보이스 적용
+      if (_selectedVoiceName.isEmpty && list.isNotEmpty) {
+        _selectedVoiceName = list.first.name;
+      }
+
+      // 저장된 보이스 적용
       if (_selectedVoiceName.isNotEmpty) {
         final match = list.where((v) => v.name == _selectedVoiceName);
         if (match.isNotEmpty) {
           await _tts.setVoice({"name": match.first.name, "locale": match.first.locale});
+        } else if (list.isNotEmpty) {
+          _selectedVoiceName = list.first.name;
+          await _tts.setVoice({"name": list.first.name, "locale": list.first.locale});
         }
       }
 
@@ -192,6 +228,11 @@ class TTSService {
     } catch (_) {
       return [];
     }
+  }
+
+  /// 보이스 목록 수동 재동기화
+  Future<List<TTSVoiceInfo>> refreshVoices() async {
+    return await _loadAndSetKoreanVoices();
   }
 
   /// 보이스 변경 및 영구 저장
@@ -216,11 +257,28 @@ class TTSService {
     } catch (_) {}
   }
 
+  /// 발화 전 최신 보이스/음높이/속도 설정 적용
+  Future<void> _applyTtsSettings() async {
+    try {
+      await _tts.setLanguage('ko-KR');
+      await _tts.setPitch(_pitch);
+      final adjustedRate = (0.50 + (_speedRate - 1.0) * 0.35).clamp(0.25, 1.0);
+      await _tts.setSpeechRate(adjustedRate);
+      if (_selectedVoiceName.isNotEmpty && _availableVoices.isNotEmpty) {
+        final match = _availableVoices.where((v) => v.name == _selectedVoiceName);
+        if (match.isNotEmpty) {
+          await _tts.setVoice({"name": match.first.name, "locale": match.first.locale});
+        }
+      }
+    } catch (_) {}
+  }
+
   /// 샘플 문장 미리듣기
   Future<void> previewVoice() async {
     await initialize();
     const sample = "안녕하세요. 영생은 값없이 주시는 하나님의 선물입니다.";
     await stop();
+    await _applyTtsSettings();
     await _tts.speak(sample);
   }
 
@@ -247,6 +305,7 @@ class TTSService {
     _speechStopwatch.reset();
     _speechStopwatch.start();
 
+    await _applyTtsSettings();
     await _tts.speak(text);
 
     _isPlaying = false;

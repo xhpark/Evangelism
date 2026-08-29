@@ -50,6 +50,11 @@ class StudyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> reloadVoices() async {
+    await _ttsService.refreshVoices();
+    notifyListeners();
+  }
+
   Future<void> previewTtsVoice() async {
     await _ttsService.previewVoice();
   }

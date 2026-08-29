@@ -52,4 +52,31 @@ void main() {
       );
     });
   });
+
+  group('원격 동기화 결과 표시 (TS-SEC-004)', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('TS-SEC-004: 통신하지 못하면 "정상"이 아니라 실패로 보고한다', () async {
+      final service = LicenseService();
+      await service.initialize();
+
+      // 테스트 환경에서는 실제 HTTP 호출이 실패한다.
+      // 이때 결과가 approved로 남으면 화면이 거짓 양성을 보여주게 된다.
+      await service.checkRemoteKillSwitch();
+
+      expect(service.lastSyncResult, isNot(RemoteSyncResult.approved));
+      expect(service.lastSyncMessage, isNot(contains('승인 상태를 확인했습니다')));
+    });
+
+    test('TS-SEC-005: 연동 주소가 비면 미설정으로 보고한다', () async {
+      final service = LicenseService();
+      await service.initialize();
+      await service.setWebhookUrl('');
+
+      await service.checkRemoteKillSwitch();
+      expect(service.lastSyncResult, equals(RemoteSyncResult.notConfigured));
+    });
+  });
 }

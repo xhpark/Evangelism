@@ -649,15 +649,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             OutlinedButton.icon(
                               onPressed: () async {
                                 await license.checkRemoteKillSwitch();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        license.isBlocked ? "⚠️ 비인가 차단 상태입니다." : "✅ 승인 상태가 정상 확인되었습니다.",
-                                      ),
-                                    ),
-                                  );
-                                }
+                                if (!context.mounted) return;
+
+                                // 로컬 상태가 아니라 서버 응답을 그대로 보여준다.
+                                // (2026-08-29: 통신 실패·서명 거부까지 "정상 확인"으로 표시되던 문제 수정)
+                                final result = license.lastSyncResult;
+                                final isProblem = result != RemoteSyncResult.approved;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(license.lastSyncMessage),
+                                    backgroundColor:
+                                        isProblem ? AppTheme.accentRed : null,
+                                    duration: Duration(seconds: isProblem ? 6 : 3),
+                                  ),
+                                );
                               },
                               icon: const Icon(Icons.sync, size: 16),
                               label: const Text("원격 승인 동기화", style: TextStyle(fontSize: 12)),

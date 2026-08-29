@@ -40,3 +40,6 @@ flutter build apk --debug  # Android 설정 변경 시 반드시 확인
 * 긴 지문 채점은 `ScoringEngine.calculateScoreAsync()`(아이솔레이트)를 쓴다. 동기 `calculateScore()`를 UI에서 직접 부르면 수 초간 화면이 멈춘다.
 * 안드로이드 `flutter_tts`는 배속 값을 2배로 곱해 넘긴다. 배속 관련 코드는 `TTSService._platformRate` 하나만 고친다.
 * 문장 수·구절 수를 UI 문자열에 하드코딩하지 않는다. 데이터에서 센다.
+* Apps Script 웹앱은 콜드 스타트가 5초를 넘는다. 원격 호출 타임아웃은 15초 이상(현재 20초)으로 둔다.
+* `package:http`의 POST는 302를 자동 추적하지 않는다. Apps Script 응답을 읽으려면 `_postFollowingRedirect()`처럼 Location을 직접 따라가야 한다.
+* **단말 진단에 `flutter run`을 쓰지 말 것.** 디버그 빌드가 릴리스 앱을 덮어써 삭제·재설치가 필요해지고, 사용자의 활성화·간증·대본이 모두 사라진다.

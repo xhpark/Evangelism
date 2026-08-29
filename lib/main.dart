@@ -7,7 +7,6 @@ import 'providers/follow_up_provider.dart';
 import 'providers/scripture_provider.dart';
 import 'providers/voice_exam_provider.dart';
 import 'providers/script_manage_provider.dart';
-import 'screens/main_navigation_screen.dart';
 import 'screens/welcome_terms_screen.dart';
 import 'theme/app_theme.dart';
 

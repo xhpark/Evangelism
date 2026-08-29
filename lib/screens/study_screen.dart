@@ -255,6 +255,7 @@ class _StudyScreenState extends State<StudyScreen> {
                 ? const Center(child: Text("표시할 문장이 없습니다."))
                 : ListView.builder(
                     controller: _scrollController,
+                    // ignore: deprecated_member_use
                     cacheExtent: 2500.0, // 전체 문장 카드를 메모리에 유지하여 스크롤 추적 보장
                     padding: const EdgeInsets.only(bottom: 24, top: 4),
                     itemCount: currentSection.steps.length,

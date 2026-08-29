@@ -53,7 +53,7 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                         child: Image.asset(
                           'assets/images/app_logo.png',
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (context, error, stackTrace) => Container(
                             color: AppTheme.primaryNavy,
                             child: const Icon(Icons.menu_book, color: AppTheme.accentGold, size: 44),
                           ),

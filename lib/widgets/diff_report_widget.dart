@@ -29,7 +29,7 @@ class DiffReportWidget extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: (result.isPassed ? AppTheme.accentEmerald : AppTheme.accentRed)
-                    .withOpacity(0.3),
+                    .withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -75,7 +75,7 @@ class DiffReportWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(

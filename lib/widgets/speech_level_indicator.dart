@@ -40,7 +40,7 @@ class SpeechLevelIndicator extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: (isListening ? AppTheme.accentRed : AppTheme.primaryBlue)
-                        .withOpacity(0.35),
+                        .withValues(alpha: 0.35),
                     blurRadius: isListening ? 20 : 10,
                     spreadRadius: isListening ? 4 : 1,
                   ),

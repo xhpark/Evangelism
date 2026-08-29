@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/quick_trigger_provider.dart';
 import '../services/quick_trigger_engine.dart';
 import '../services/transition_sentence_engine.dart';
-import '../widgets/diff_report_widget.dart';
 import '../widgets/speech_level_indicator.dart';
 import '../theme/app_theme.dart';
 

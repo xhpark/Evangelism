@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/license_service.dart';
 import '../theme/app_theme.dart';
+import 'license_activation_screen.dart';
 import 'main_navigation_screen.dart';
 
 class WelcomeTermsScreen extends StatefulWidget {
@@ -14,9 +17,16 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
 
   void _onStartLearning() {
     if (!_isAgreed) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
-    );
+    final license = Provider.of<LicenseService>(context, listen: false);
+    if (license.isActivated) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LicenseActivationScreen()),
+      );
+    }
   }
 
   @override

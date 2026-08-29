@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/script_manage_provider.dart';
 import '../providers/study_provider.dart';
+import '../services/license_service.dart';
 import '../models/step_item_model.dart';
 import '../theme/app_theme.dart';
 
@@ -467,7 +469,146 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 5. 저작권 고지 및 개발자 정보 카드
+            // 5. 라이선스 및 기기 보안 관리 카드
+            Consumer<LicenseService>(
+              builder: (context, license, _) {
+                return Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.blue.shade100),
+                  ),
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.security, color: AppTheme.primaryBlue),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                "기기 라이선스 및 보안 관리",
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryNavy),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: license.isActivated
+                                    ? AppTheme.accentEmerald.withValues(alpha: 0.12)
+                                    : AppTheme.accentRed.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                license.isActivated ? "정식 승인 (Active)" : "미인증",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: license.isActivated ? AppTheme.accentEmerald : AppTheme.accentRed,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Expanded(
+                                    child: Text(
+                                      "기기 고유 코드 (Device UUID)",
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () {
+                                      Clipboard.setData(ClipboardData(text: license.deviceId));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text("📋 기기 코드가 복사되었습니다.")),
+                                      );
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.copy, size: 13, color: AppTheme.primaryBlue),
+                                          SizedBox(width: 2),
+                                          Text("복사", style: TextStyle(fontSize: 11, color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              SelectableText(
+                                license.deviceId,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'monospace',
+                                  color: AppTheme.primaryNavy,
+                                ),
+                              ),
+                              if (license.userName.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  "등록 훈련생: ${license.userName}",
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                await license.checkRemoteKillSwitch();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        license.isBlocked ? "⚠️ 비인가 차단 상태입니다." : "✅ 승인 상태가 정상 확인되었습니다.",
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.sync, size: 16),
+                              label: const Text("원격 승인 동기화", style: TextStyle(fontSize: 12)),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () => _showWebhookConfigDialog(context, license),
+                              icon: const Icon(Icons.link, size: 16),
+                              label: const Text("구글 시트 연동 설정", style: TextStyle(fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // 6. 저작권 고지 및 개발자 정보 카드
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -660,6 +801,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
             child: const Text("초기화"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWebhookConfigDialog(BuildContext context, LicenseService license) {
+    final controller = TextEditingController(text: license.webhookUrl);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.link, color: AppTheme.primaryBlue),
+            SizedBox(width: 8),
+            Text("구글 시트 웹앱 URL 설정", style: TextStyle(fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "개발자용 Google Apps Script 웹앱 배포 URL을 입력하면 원격 킬스위치 및 실시간 등록 텔레메트리가 연동됩니다.",
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: "https://script.google.com/macros/s/.../exec",
+                hintStyle: TextStyle(fontSize: 11),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              style: const TextStyle(fontSize: 12),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("취소"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await license.setWebhookUrl(controller.text);
+              if (context.mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("✅ 구글 웹앱 URL이 저장되었습니다.")),
+                );
+              }
+            },
+            child: const Text("저장"),
           ),
         ],
       ),

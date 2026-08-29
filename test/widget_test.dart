@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:just_ee_master/data/script_repository.dart';
 import 'package:just_ee_master/providers/study_provider.dart';
 import 'package:just_ee_master/providers/quick_trigger_provider.dart';
@@ -9,16 +10,26 @@ import 'package:just_ee_master/providers/voice_exam_provider.dart';
 import 'package:just_ee_master/providers/script_manage_provider.dart';
 import 'package:just_ee_master/screens/main_navigation_screen.dart';
 import 'package:just_ee_master/screens/welcome_terms_screen.dart';
+import 'package:just_ee_master/services/license_service.dart';
 import 'package:just_ee_master/theme/app_theme.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('App smoke test: BottomNavigationBar 5개 탭 렌더링 확인', (WidgetTester tester) async {
     final repository = ScriptRepository();
+    final licenseService = LicenseService();
+    await licenseService.initialize();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           Provider<ScriptRepository>.value(value: repository),
+          ChangeNotifierProvider<LicenseService>.value(value: licenseService),
           ChangeNotifierProvider(create: (_) => StudyProvider(repository)),
           ChangeNotifierProvider(create: (_) => QuickTriggerProvider(repository)),
           ChangeNotifierProvider(create: (_) => ScriptureProvider()),
@@ -41,10 +52,16 @@ void main() {
   });
 
   testWidgets('WelcomeTermsScreen: 저작권, 개발자 정보(박상환, xhpark@naver.com) 및 동의 체크 게이트 검증', (WidgetTester tester) async {
+    final licenseService = LicenseService();
+    await licenseService.initialize();
+
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: const WelcomeTermsScreen(),
+      ChangeNotifierProvider<LicenseService>.value(
+        value: licenseService,
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const WelcomeTermsScreen(),
+        ),
       ),
     );
 

@@ -291,13 +291,13 @@ class RandomExamEngine {
         fallbackSection: allSections.first,
       ),
       _makeSingle(
-        title: "💬 서론: 성경 기록 목적 및 팀원 확신 확인",
+        title: "💬 서론: 성경 기록 목적 (팀원 확신 확인)",
         instruction: "성경 기록 목적과 동행 팀원 확신 확인 단락 전체를 암송하세요.",
         step: stepMap['intro_5'],
         fallbackSection: allSections.first,
       ),
       _makeSingle(
-        title: "💬 서론: 제2 진단 질문 & 복음 제시 허락",
+        title: "💬 서론: 제2 진단 질문 (복음 제시 허락)",
         instruction: "천국 들어가는 이유 질문과 선한 행위 확인, 가장 기쁜 소식 허락 단락 전체를 암송하세요.",
         step: stepMap['intro_6'],
         fallbackSection: allSections.first,

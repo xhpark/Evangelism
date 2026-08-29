@@ -2,17 +2,17 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.44.0-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.12.0-0175C2?logo=dart)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/Tests-33%20Passed-brightgreen)](docs/02_module_test_specs.md)
+[![Tests](https://img.shields.io/badge/Tests-30%20Passed-brightgreen)](docs/02_module_test_specs.md)
 [![License](https://img.shields.io/badge/Security-KillSwitch%20%2B%20PIN%20Active-success)](README.md)
 
-전도폭발(EE International) 복음 제시 전문(1~8대 대지 38개 문장)의 **완벽한 암송과 실전 1:1 구두 훈련 역량 강화**를 위해 설계된 지능형 모바일 트레이닝 시스템입니다.
+전도폭발(EE International) 복음 제시 전문(1~8대 대지 40개 문장)의 **완벽한 암송과 실전 1:1 구두 훈련 역량 강화**를 위해 설계된 지능형 모바일 트레이닝 시스템입니다.
 
 ---
 
 ## 🛡️ 모바일 보안 및 비인가 복제 방지 시스템 (1, 2, 4 방안 탑재)
 
 1. **원격 킬 스위치 (Remote Kill-Switch)**: 개발자의 구글 시트 관리 목록에서 `BLOCKED`로 전환 시 비인가 단말기 즉시 전면 차단.
-2. **마스터 인증키 (Activation PIN 게이트)**: 최초 설치 시 개발자 발급 인증키(`JUST-EE2026` 등) 입력 필수.
+2. **마스터 인증키 (Activation PIN 게이트)**: 최초 설치 시 훈련생 성명·소속 교회와 함께 개발자 발급 마스터 인증키 입력 필수. (인증키 실제 값은 소스 코드와 개발자만 보유하며, 문서에는 공개하지 않습니다.)
 3. **신규 기기 실시간 텔레메트리 통보**: 새 기기 활성화 시 개발자 이메일(`xhpark@naver.com`)로 기기 정보 자동 전송.
 
 ---
@@ -32,7 +32,7 @@
    * 🔗 6대 대지 전환문장 집중 마스터 전용 덱.
 
 3. **📖 3. 성경덱 (Scripture Deck)**
-   * 전도폭발 9대 핵심 성경 구절 암송 카드 (에베소서 2:8-9, 로마서 3:23, 요한일서 4:8/출애굽기 34:7, 이사야 53:6, 사도행전 16:31, 요한복음 6:47 등).
+   * 전도폭발 8대 핵심 성경 구절 암송 카드 (요한일서 5:13, 에베소서 2:8-9, 로마서 3:23, 요한일서 4:8b, 출애굽기 34:7b, 이사야 53:6, 사도행전 16:31, 요한복음 6:47).
    * 구절 개별 TTS 음성 듣기 및 `[ ___ ]` 빈칸 퀴즈 모드.
 
 4. **🎙️ 4. 실전시험 (Real Voice Exam)**
@@ -43,9 +43,10 @@
 
 5. **⚙️ 5. 설정 (Settings & Security)**
    * 기기 고유 코드(Device UUID) 확인 및 원격 승인 동기화.
-   * TTS 목소리(Voice) 선택 및 음높이(Tone/Pitch) 조절.
+   * 순수 한국어 TTS 보이스 선별 목록에서 목소리(Voice) 선택.
+   * 음높이(Tone/Pitch) 슬라이더 및 3대 원터치 톤 프리셋(차분한 저음 / 표준 톤 / 밝은 고음).
    * 8대 챕터별 문장 개별 수정 및 TXT 전문 일괄 임포트/반영.
-   * 개인 간증(서론 1.2) 맞춤 저장 및 교재 기본 대본 복원.
+   * 개인 간증(서론 1.2) 및 소속 교회명 맞춤 저장.
 
 ---
 
@@ -56,6 +57,8 @@
 * **[🧪 단위 및 모듈 테스트 명세서](docs/02_module_test_specs.md)**: 33개 단위/위젯 테스트 시나리오 및 통과 내역
 * **[📋 통합 테스트 및 실기기 검증 계획서](docs/03_integration_test_plan.md)**: Galaxy S24 Ultra E2E 검증
 * **[⚙️ 구글 앱스 스크립트 백엔드 코드](scripts/google_apps_script_backend.js)**: 구글 시트 배포용 소스
+* **[🤝 AI 협업 인수인계 기록](docs/05_ai_handoff_log.md)**: 코드 현황·문서 동기화 이력 (Antigravity 등 타 AI 에이전트용)
+* **[🤖 AI 에이전트 작업 규칙](AGENTS.md)**: 저장소 공통 규칙 및 금지 사항
 
 ---
 

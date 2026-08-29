@@ -107,7 +107,7 @@ class RandomExamEngine {
           title: "👑 전체 전문 100% 완주 시험",
           category: "전체 완주",
           leadingScript: firstLead,
-          instruction: "서론부터 즉석 양육 마침 기도까지 전체 전문(38문장)을 처음부터 끝까지 빠짐없이 암송하세요.",
+          instruction: "서론부터 즉석 양육 마침 기도까지 전체 전문(40문장)을 처음부터 끝까지 빠짐없이 암송하세요.",
           originalText: fullText,
           keywords: allKw,
           sourceSections: allSections,

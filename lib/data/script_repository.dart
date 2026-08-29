@@ -65,14 +65,6 @@ class ScriptRepository {
     await loadSections();
   }
 
-  /// 커스텀 스크립트 전체 초기화 (기본 교재 원문 복원)
-  Future<void> resetToDefault() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_customScriptsKey);
-    _cachedSections = null;
-    await loadSections();
-  }
-
   Future<Map<String, String>> _getCustomScriptsMap() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_customScriptsKey);

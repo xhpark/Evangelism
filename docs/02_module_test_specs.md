@@ -1,9 +1,10 @@
 # 전도폭발 JUST EE 단위 및 모듈 테스트 명세서 (Module Test Specifications)
 
-**문서 버전:** v2.1  
+**문서 버전:** v2.2  
 **작성일:** 2026-08-29  
 **테스트 프레임워크:** Flutter Test (`flutter test`)  
-**테스트 스위트 구성:** 총 11개 파일, 33개 단위/위젯 테스트 (100% 통과)
+**테스트 스위트 구성:** 총 11개 파일, 30개 단위/위젯 테스트 (100% 통과)  
+**최종 실행 결과:** 2026-08-29 `flutter test` → `+30: All tests passed!` / `flutter analyze` → `No issues found!`
 
 ---
 
@@ -17,9 +18,6 @@
 | | TS-LIC-004 | `LicenseService` | 원격 킬스위치 차단 시 Blocked 상태 전환 검증 (방안 1) | PASS |
 | | TS-LIC-005 | `LicenseActivationScreen` | UI 렌더링, 기기 코드 복사 및 PIN 입력 필드 검증 | PASS |
 | | TS-LIC-006 | `BlockedScreen` | 비인가 단말기 접근 차단 화면 및 사유 렌더링 검증 | PASS |
-| `follow_up_engine_test.dart` | TS-FOLL-001 | `FollowUpEngine` | 요한복음 6:47 확신 4문답 구어체 의도 매칭 검증 (Q2 영생) | PASS |
-| | TS-FOLL-002 | `FollowUpEngine` | 5손가락 영적 성장 수단 매핑 무결성 검증 | PASS |
-| | TS-FOLL-004 | `FollowUpEngine` | 확신 질문 Q3(천국) 및 Q4(십자가/약속) 의도 매칭 | PASS |
 | `korean_text_normalizer_test.dart` | TS-NORM-001 | `KoreanTextNormalizer` | 추임새 및 간투사("어...", "음...") 자동 필터링 | PASS |
 | | TS-NORM-002 | `KoreanTextNormalizer` | 성경 장/절 및 한글 수사 ➔ 아라비아 숫자 통일 변환 | PASS |
 | | TS-NORM-003 | `KoreanTextNormalizer` | 특수문자 및 다중 공백 제거 정제 검증 | PASS |
@@ -47,8 +45,20 @@
 
 ---
 
-## 2. 테스트 실행 명령어
+## 2. 폐기된 테스트 (2026-08-29)
+
+| 폐기 테스트 ID | 사유 |
+| :--- | :--- |
+| TS-FOLL-001 / 002 / 004 (`follow_up_engine_test.dart`) | 검증 대상인 `FollowUpEngine`·`FollowUpProvider`·`FollowUpMasterScreen`이 어느 화면에서도 참조되지 않는 미연결 코드로 확인되어 계열 전체 삭제. |
+| TS-EDIT-001의 "기본값 복원" 단계 | 설정 화면의 대본 복원 UI가 커밋 `93fd9eb`에서 영구 제거됨에 따라, 해당 검증 단계와 `resetAll()`/`resetToDefault()` 잔재 코드를 함께 삭제. 문장 수정 전파 및 채점 반영 검증은 그대로 유지. |
+
+삭제 배경과 복구 방법은 [05_ai_handoff_log.md](05_ai_handoff_log.md)에 기록되어 있습니다.
+
+---
+
+## 3. 테스트 실행 명령어
 
 ```bash
-flutter test
+flutter test      # 30개 단위/위젯 테스트
+flutter analyze   # 정적 분석 (경고 0건 유지)
 ```

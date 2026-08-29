@@ -48,11 +48,6 @@ class ScriptManageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> resetAll() async {
-    await _repository.resetToDefault();
-    await loadData();
-  }
-
   Future<bool> importText(String rawText) async {
     final success = await _repository.importFromPlainText(rawText);
     if (success) {

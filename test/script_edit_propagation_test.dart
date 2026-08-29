@@ -44,13 +44,6 @@ void main() {
 
       expect(scoreResult.totalScore, greaterThanOrEqualTo(95.0));
       expect(scoreResult.isPassed, isTrue);
-
-      // 5. 기본값으로 복원 시 원래 교재 대본으로 복귀 검증
-      await manageProvider.resetAll();
-      await studyProvider.refresh();
-
-      final graceReset = studyProvider.sections.firstWhere((s) => s.id == 'grace');
-      expect(graceReset.steps[0].effectiveScript, contains("영생은 값없이"));
     });
   });
 }

@@ -108,7 +108,19 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 6),
+
+                    // 버전 및 배포 날짜
+                    const Text(
+                      "Version 2.0.0 (2026.08.29)",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
 
                     // 2. 저작권 고지 및 면책 약관 전문 카드
                     Container(

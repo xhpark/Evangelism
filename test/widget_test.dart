@@ -50,6 +50,7 @@ void main() {
 
     // 첫 화면 렌더링 확인
     expect(find.text('전도폭발 JUST EE 훈련 마스터'), findsOneWidget);
+    expect(find.text('Version 2.0.0 (2026.08.29)'), findsOneWidget);
     expect(find.textContaining('박상환(xhpark@naver.com)'), findsOneWidget);
     expect(find.textContaining('사단법인 한국전도폭발본부'), findsOneWidget);
     expect(find.textContaining('면책 조항'), findsOneWidget);

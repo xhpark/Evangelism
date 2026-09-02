@@ -89,7 +89,9 @@ class _BlockedScreenState extends State<BlockedScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -135,17 +137,25 @@ class _BlockedScreenState extends State<BlockedScreen> {
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Icon(Icons.refresh, size: 20),
                     label: const Text(
                       '승인 상태 다시 확인하기',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryBlue,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -154,24 +164,36 @@ class _BlockedScreenState extends State<BlockedScreen> {
                 // 3. 개발자 문의 버튼
                 OutlinedButton.icon(
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(
-                      text: '기기코드: ${license.deviceId}\n개발자 문의: xhpark@naver.com',
-                    ));
+                    Clipboard.setData(
+                      ClipboardData(
+                        text:
+                            '기기코드: ${license.deviceId}\n개발자 문의: xhpark@naver.com',
+                      ),
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('📧 기기코드 및 문의 이메일이 복사되었습니다.'),
                       ),
                     );
                   },
-                  icon: const Icon(Icons.mail_outline, size: 18, color: Colors.white70),
+                  icon: const Icon(
+                    Icons.mail_outline,
+                    size: 18,
+                    color: Colors.white70,
+                  ),
                   label: const Text(
                     '개발자(xhpark@naver.com)에게 문의',
                     style: TextStyle(fontSize: 13, color: Colors.white),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.white30),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ],

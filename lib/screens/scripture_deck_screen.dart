@@ -17,8 +17,12 @@ class ScriptureDeckScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: Icon(
-              provider.blankQuizMode ? Icons.format_strikethrough : Icons.quiz_outlined,
-              color: provider.blankQuizMode ? AppTheme.accentGold : Colors.white,
+              provider.blankQuizMode
+                  ? Icons.format_strikethrough
+                  : Icons.quiz_outlined,
+              color: provider.blankQuizMode
+                  ? AppTheme.accentGold
+                  : Colors.white,
             ),
             tooltip: "빈칸 퀴즈 모드 토글",
             onPressed: () => provider.toggleBlankQuizMode(),
@@ -44,7 +48,9 @@ class ScriptureDeckScreen extends StatelessWidget {
                         c.reference.split(' ').take(2).join(' '),
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           color: isSelected ? Colors.white : AppTheme.textDark,
                         ),
                       ),
@@ -82,7 +88,10 @@ class ScriptureDeckScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.purple.shade50,
                             borderRadius: BorderRadius.circular(8),
@@ -97,7 +106,10 @@ class ScriptureDeckScreen extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.volume_up, color: AppTheme.primaryBlue),
+                          icon: const Icon(
+                            Icons.volume_up,
+                            color: AppTheme.primaryBlue,
+                          ),
                           onPressed: () => provider.speakCurrentVerse(),
                           tooltip: "성경 구절 듣기",
                         ),
@@ -135,7 +147,10 @@ class ScriptureDeckScreen extends StatelessWidget {
                         padding: EdgeInsets.symmetric(vertical: 32),
                         child: Text(
                           "가림막 적용 중\n(아래 버튼을 눌러 본문 확인)",
-                          style: TextStyle(color: AppTheme.textMuted, fontSize: 14),
+                          style: TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 14,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -169,8 +184,13 @@ class ScriptureDeckScreen extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: provider.prevCard,
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -180,7 +200,10 @@ class ScriptureDeckScreen extends StatelessWidget {
                         SizedBox(width: 2),
                         Text(
                           "이전 구절",
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -189,7 +212,10 @@ class ScriptureDeckScreen extends StatelessWidget {
                 const SizedBox(width: 6),
                 IconButton.filledTonal(
                   onPressed: () => provider.toggleShowText(),
-                  icon: Icon(provider.showText ? Icons.visibility_off : Icons.visibility, size: 20),
+                  icon: Icon(
+                    provider.showText ? Icons.visibility_off : Icons.visibility,
+                    size: 20,
+                  ),
                   tooltip: "본문 가리기/보기",
                 ),
                 const SizedBox(width: 6),
@@ -197,8 +223,13 @@ class ScriptureDeckScreen extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: provider.nextCard,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -206,7 +237,10 @@ class ScriptureDeckScreen extends StatelessWidget {
                       children: [
                         Text(
                           "다음 구절",
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         SizedBox(width: 2),
                         Icon(Icons.chevron_right, size: 18),

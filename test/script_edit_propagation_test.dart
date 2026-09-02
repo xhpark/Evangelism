@@ -31,7 +31,9 @@ void main() {
       await manageProvider.loadData();
 
       // 3. StudyProvider에 즉시 반영되었는지 확인
-      final graceUpdated = studyProvider.sections.firstWhere((s) => s.id == 'grace');
+      final graceUpdated = studyProvider.sections.firstWhere(
+        (s) => s.id == 'grace',
+      );
       expect(graceUpdated.steps[0].effectiveScript, equals(modifiedText));
 
       // 4. STT 채점 엔진이 수정된 문장을 기준으로 정상 채점하는지 검증

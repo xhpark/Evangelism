@@ -1,82 +1,105 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:just_ee_master/services/license_service.dart';
+import 'package:just_ee_master/services/license_token_store.dart';
+
+const _endpoint = 'https://script.google.com/macros/s/test/exec';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  group('License PIN 게이트 회귀 테스트 (TS-SEC-001 ~ 003)', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-    });
+  test('TS-SEC-001: 코드 형태만으로는 활성화되지 않는다', () async {
+    var requestCount = 0;
+    final service = LicenseService(
+      httpClient: MockClient((_) async {
+        requestCount++;
+        return http.Response('{"status":"DENIED"}', 200);
+      }),
+      tokenStore: MemoryLicenseTokenStore(),
+      apiUrl: _endpoint,
+      appVersionLoader: () async => 'test',
+    );
+    await service.initialize();
 
-    test('TS-SEC-001: "JUST"로 시작하는 임의 문자열은 활성화되지 않는다', () async {
-      // 2026-08-29 이전에는 JUST로 시작하고 8자 이상이면 무조건 통과하는 우회로가 있었다.
-      const bypassAttempts = [
-        'JUSTABCD',
-        'JUST1234',
-        'JUSTINBIEBER',
-        'JUST-XXXX-YYYY',
-        'JUSTEE9999',
-      ];
-
-      for (final pin in bypassAttempts) {
-        SharedPreferences.setMockInitialValues({});
-        final service = LicenseService();
-        await service.initialize();
-
-        final ok = await service.activateWithPin(pin, userName: '테스트', affiliation: '테스트');
-        expect(ok, isFalse, reason: '$pin 이(가) 통과되면 안 됩니다.');
-        expect(service.isActivated, isFalse);
-      }
-    });
-
-    test('TS-SEC-002: 발급된 마스터 인증키만 활성화된다 (하이픈/대소문자 무관)', () async {
-      final service = LicenseService();
-      await service.initialize();
-
-      expect(service.verifyMasterPin('JUST-EE2026'), isTrue);
-      expect(service.verifyMasterPin('justee2026'), isTrue);
-      expect(service.verifyMasterPin(''), isFalse);
-      expect(service.verifyMasterPin('JUST-EE2027'), isFalse);
-    });
-
-    test('TS-SEC-003: 기기 고유 코드는 EE-XXXX-XXXX-XXXX 형식으로 발급된다', () async {
-      final service = LicenseService();
-      await service.initialize();
-
+    for (final attempt in ['PREFIX-ABCD', 'ARBITRARY-CODE', '12345678']) {
       expect(
-        RegExp(r'^EE-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$').hasMatch(service.deviceId),
-        isTrue,
-        reason: '발급된 코드: ${service.deviceId}',
+        await service.activateWithCode(
+          attempt,
+          userName: '테스트',
+          affiliation: '테스트',
+        ),
+        isFalse,
       );
-    });
+    }
+    expect(requestCount, 3);
+    expect(service.isActivated, isFalse);
   });
 
-  group('원격 동기화 결과 표시 (TS-SEC-004)', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
+  test('TS-SEC-002: 승인 상태 확인에는 저장된 기기 토큰을 사용한다', () async {
+    final tokens = MemoryLicenseTokenStore(token: 'issued-token');
+    SharedPreferences.setMockInitialValues({
+      'just_ee_license_status': 'active',
+      'just_ee_device_uuid': 'EE-1111-2222-3333-4444',
     });
+    final service = LicenseService(
+      httpClient: MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(body['device_token'], 'issued-token');
+        expect(body.containsKey('activation_code'), isFalse);
+        return http.Response('{"status":"APPROVED"}', 200);
+      }),
+      tokenStore: tokens,
+      apiUrl: _endpoint,
+      appVersionLoader: () async => 'test',
+    );
+    await service.initialize();
+    expect(service.lastSyncResult, RemoteSyncResult.approved);
+  });
 
-    test('TS-SEC-004: 통신하지 못하면 "정상"이 아니라 실패로 보고한다', () async {
-      final service = LicenseService();
-      await service.initialize();
-
-      // 테스트 환경에서는 실제 HTTP 호출이 실패한다.
-      // 이때 결과가 approved로 남으면 화면이 거짓 양성을 보여주게 된다.
-      await service.checkRemoteKillSwitch();
-
-      expect(service.lastSyncResult, isNot(RemoteSyncResult.approved));
-      expect(service.lastSyncMessage, isNot(contains('승인 상태를 확인했습니다')));
+  test('TS-SEC-003: 서버가 토큰을 거부하면 로컬 승인도 해제한다', () async {
+    final tokens = MemoryLicenseTokenStore(token: 'revoked-token');
+    SharedPreferences.setMockInitialValues({
+      'just_ee_license_status': 'active',
+      'just_ee_device_uuid': 'EE-1111-2222-3333-4444',
     });
+    final service = LicenseService(
+      httpClient: MockClient(
+        (_) async => http.Response('{"status":"DENIED"}', 200),
+      ),
+      tokenStore: tokens,
+      apiUrl: _endpoint,
+      appVersionLoader: () async => 'test',
+    );
+    await service.initialize();
 
-    test('TS-SEC-005: 연동 주소가 비면 미설정으로 보고한다', () async {
-      final service = LicenseService();
-      await service.initialize();
-      await service.setWebhookUrl('');
+    expect(service.isActivated, isFalse);
+    expect(service.lastSyncResult, RemoteSyncResult.tokenRejected);
+    expect(await tokens.read(), isNull);
+  });
 
-      await service.checkRemoteKillSwitch();
-      expect(service.lastSyncResult, equals(RemoteSyncResult.notConfigured));
-    });
+  test('TS-SEC-004: 허용된 Apps Script HTTPS 주소만 사용한다', () async {
+    final service = LicenseService(
+      httpClient: MockClient((_) async => http.Response('{}', 200)),
+      tokenStore: MemoryLicenseTokenStore(),
+      apiUrl: 'https://example.com/macros/s/test/exec',
+      appVersionLoader: () async => 'test',
+    );
+    await service.initialize();
+    expect(service.isRemoteConfigured, isFalse);
+    expect(
+      await service.activateWithCode(
+        'CODE',
+        userName: '테스트',
+        affiliation: '테스트',
+      ),
+      isFalse,
+    );
+    expect(service.lastSyncResult, RemoteSyncResult.notConfigured);
   });
 }

@@ -59,7 +59,8 @@ class StepItem {
     return sentences.isNotEmpty ? sentences.last.trim() : current;
   }
 
-  String get effectiveScript => (customScript != null && customScript!.trim().isNotEmpty)
+  String get effectiveScript =>
+      (customScript != null && customScript!.trim().isNotEmpty)
       ? customScript!
       : script;
 
@@ -94,25 +95,27 @@ class StepItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'step_id': stepId,
-        'name': name,
-        'type': type.name,
-        'summary': summary,
-        'script': script,
-        if (customScript != null) 'custom_script': customScript,
-        if (reference != null) 'reference': reference,
-        'keywords': keywords,
-        if (leadInText != null) 'lead_in_text': leadInText,
-        'is_transition': isTransition,
-        if (transitionText != null) 'transition_text': transitionText,
-        if (transitionKeywords.isNotEmpty)
-          'transition_keywords': transitionKeywords,
-      };
+    'step_id': stepId,
+    'name': name,
+    'type': type.name,
+    'summary': summary,
+    'script': script,
+    if (customScript != null) 'custom_script': customScript,
+    if (reference != null) 'reference': reference,
+    'keywords': keywords,
+    if (leadInText != null) 'lead_in_text': leadInText,
+    'is_transition': isTransition,
+    if (transitionText != null) 'transition_text': transitionText,
+    if (transitionKeywords.isNotEmpty)
+      'transition_keywords': transitionKeywords,
+  };
 
   factory StepItem.fromJson(Map<String, dynamic> json) {
     StepType parsedType;
     try {
-      parsedType = StepType.values.byName(json['type'] as String? ?? 'dialogue');
+      parsedType = StepType.values.byName(
+        json['type'] as String? ?? 'dialogue',
+      );
     } catch (_) {
       parsedType = StepType.dialogue;
     }
@@ -130,7 +133,8 @@ class StepItem {
     }
 
     final scriptText = json['script'] as String? ?? '';
-    final isTrans = json['is_transition'] as bool? ??
+    final isTrans =
+        json['is_transition'] as bool? ??
         (parsedType == StepType.transition ||
             json['name']?.toString().contains('전환') == true);
 

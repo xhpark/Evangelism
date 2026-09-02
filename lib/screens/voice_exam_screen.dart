@@ -48,10 +48,7 @@ class _VoiceExamScreenState extends State<VoiceExamScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          _ExamTakingTabView(),
-          _ExamHistoryTabView(),
-        ],
+        children: const [_ExamTakingTabView(), _ExamHistoryTabView()],
       ),
     );
   }
@@ -91,7 +88,9 @@ class _ExamTakingTabView extends StatelessWidget {
                       mode.title,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         color: isSelected ? Colors.white : AppTheme.textDark,
                       ),
                     ),
@@ -121,16 +120,26 @@ class _ExamTakingTabView extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.casino, size: 40, color: AppTheme.primaryBlue),
+                  const Icon(
+                    Icons.casino,
+                    size: 40,
+                    color: AppTheme.primaryBlue,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     exam.selectedMode.title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     exam.selectedMode.description,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textMuted,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -149,7 +158,9 @@ class _ExamTakingTabView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
@@ -194,11 +205,26 @@ class _ExamTakingTabView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        _buildLevelChip(context, exam, TriggerDifficulty.beginner, "초급 (5단어)"),
+                        _buildLevelChip(
+                          context,
+                          exam,
+                          TriggerDifficulty.beginner,
+                          "초급 (5단어)",
+                        ),
                         const SizedBox(width: 4),
-                        _buildLevelChip(context, exam, TriggerDifficulty.intermediate, "중급 (4단어)"),
+                        _buildLevelChip(
+                          context,
+                          exam,
+                          TriggerDifficulty.intermediate,
+                          "중급 (4단어)",
+                        ),
                         const SizedBox(width: 4),
-                        _buildLevelChip(context, exam, TriggerDifficulty.master, "고급 (3단어)"),
+                        _buildLevelChip(
+                          context,
+                          exam,
+                          TriggerDifficulty.master,
+                          "고급 (3단어)",
+                        ),
                       ],
                     ),
                   ),
@@ -223,7 +249,11 @@ class _ExamTakingTabView extends StatelessWidget {
                             const Expanded(
                               child: Row(
                                 children: [
-                                  Icon(Icons.record_voice_over, size: 15, color: AppTheme.primaryBlue),
+                                  Icon(
+                                    Icons.record_voice_over,
+                                    size: 15,
+                                    color: AppTheme.primaryBlue,
+                                  ),
                                   SizedBox(width: 5),
                                   Expanded(
                                     child: Text(
@@ -240,9 +270,14 @@ class _ExamTakingTabView extends StatelessWidget {
                             ),
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                color: AppTheme.primaryBlue.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -317,12 +352,20 @@ class _ExamTakingTabView extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.mic_off_outlined, size: 18, color: AppTheme.accentRed),
+                  const Icon(
+                    Icons.mic_off_outlined,
+                    size: 18,
+                    color: AppTheme.accentRed,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       exam.sttError!,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.4),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF991B1B),
+                        height: 1.4,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -352,7 +395,10 @@ class _ExamTakingTabView extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                   SizedBox(width: 10),
-                  Text("채점 중입니다...", style: TextStyle(fontSize: 12, color: AppTheme.primaryBlue)),
+                  Text(
+                    "채점 중입니다...",
+                    style: TextStyle(fontSize: 12, color: AppTheme.primaryBlue),
+                  ),
                 ],
               ),
             ),
@@ -388,18 +434,32 @@ class _ExamTakingTabView extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.record_voice_over, size: 16, color: AppTheme.primaryBlue),
+                      Icon(
+                        Icons.record_voice_over,
+                        size: 16,
+                        color: AppTheme.primaryBlue,
+                      ),
                       SizedBox(width: 6),
                       Text(
                         "실시간 음성 인식 중...",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    exam.liveSpokenText.isEmpty ? "(말씀을 시작하세요...)" : exam.liveSpokenText,
-                    style: const TextStyle(fontSize: 14, height: 1.5, color: AppTheme.textDark),
+                    exam.liveSpokenText.isEmpty
+                        ? "(말씀을 시작하세요...)"
+                        : exam.liveSpokenText,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: AppTheme.textDark,
+                    ),
                   ),
                 ],
               ),
@@ -414,7 +474,12 @@ class _ExamTakingTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildLevelChip(BuildContext context, VoiceExamProvider exam, TriggerDifficulty diff, String label) {
+  Widget _buildLevelChip(
+    BuildContext context,
+    VoiceExamProvider exam,
+    TriggerDifficulty diff,
+    String label,
+  ) {
     final isSelected = (exam.difficulty == diff);
     return ChoiceChip(
       label: Text(
@@ -468,13 +533,21 @@ class _ExamHistoryTabView extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.title,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: item.isPassed ? Colors.green.shade50 : Colors.red.shade50,
+                        color: item.isPassed
+                            ? Colors.green.shade50
+                            : Colors.red.shade50,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -482,7 +555,9 @@ class _ExamHistoryTabView extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: item.isPassed ? Colors.green.shade700 : Colors.red.shade700,
+                          color: item.isPassed
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
                         ),
                       ),
                     ),
@@ -491,7 +566,10 @@ class _ExamHistoryTabView extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   "일시: ${item.timestamp.year}.${item.timestamp.month}.${item.timestamp.day} ${item.timestamp.hour}:${item.timestamp.minute.toString().padLeft(2, '0')}  |  문자 일치율: ${item.charAccuracy.toStringAsFixed(0)}%  |  키워드: ${item.keywordAccuracy.toStringAsFixed(0)}%",
-                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textMuted,
+                  ),
                 ),
               ],
             ),

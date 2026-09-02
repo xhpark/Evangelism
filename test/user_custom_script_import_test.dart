@@ -68,7 +68,10 @@ void main() {
 
       // 은혜
       final grace = sections.firstWhere((s) => s.id == 'grace');
-      expect(grace.steps.first.effectiveScript, contains("영생은 값없이 주시는 하나님의 선물입니다"));
+      expect(
+        grace.steps.first.effectiveScript,
+        contains("영생은 값없이 주시는 하나님의 선물입니다"),
+      );
 
       // 인간
       final humanity = sections.firstWhere((s) => s.id == 'humanity');
@@ -92,7 +95,10 @@ void main() {
 
       // 양육
       final follow = sections.firstWhere((s) => s.id == 'follow_up');
-      expect(follow.steps.first.effectiveScript, contains("이 책은 선생님께 드리려고 가져 온 책"));
+      expect(
+        follow.steps.first.effectiveScript,
+        contains("이 책은 선생님께 드리려고 가져 온 책"),
+      );
     });
   });
 }

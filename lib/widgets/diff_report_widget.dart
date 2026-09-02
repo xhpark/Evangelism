@@ -28,8 +28,11 @@ class DiffReportWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: (result.isPassed ? AppTheme.accentEmerald : AppTheme.accentRed)
-                    .withValues(alpha: 0.3),
+                color:
+                    (result.isPassed
+                            ? AppTheme.accentEmerald
+                            : AppTheme.accentRed)
+                        .withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -73,7 +76,10 @@ class DiffReportWidget extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -91,9 +97,15 @@ class DiffReportWidget extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildSubStat("문자 일치율", "${result.charAccuracy.toStringAsFixed(0)}%"),
+                  _buildSubStat(
+                    "문자 일치율",
+                    "${result.charAccuracy.toStringAsFixed(0)}%",
+                  ),
                   Container(width: 1, height: 24, color: Colors.white24),
-                  _buildSubStat("키워드 포함률", "${result.keywordAccuracy.toStringAsFixed(0)}%"),
+                  _buildSubStat(
+                    "키워드 포함률",
+                    "${result.keywordAccuracy.toStringAsFixed(0)}%",
+                  ),
                 ],
               ),
             ],
@@ -147,8 +159,8 @@ class DiffReportWidget extends StatelessWidget {
                               ratio >= 0.8
                                   ? AppTheme.accentEmerald
                                   : ratio >= 0.6
-                                      ? AppTheme.accentGold
-                                      : AppTheme.accentRed,
+                                  ? AppTheme.accentGold
+                                  : AppTheme.accentRed,
                             ),
                           ),
                         ),
@@ -218,7 +230,10 @@ class DiffReportWidget extends StatelessWidget {
   Widget _buildSubStat(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 11),
+        ),
         const SizedBox(height: 2),
         Text(
           value,

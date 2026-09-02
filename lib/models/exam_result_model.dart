@@ -12,16 +12,16 @@ class ExamAreaScore {
   });
 
   Map<String, dynamic> toJson() => {
-        'areaName': areaName,
-        'score': score,
-        'maxScore': maxScore,
-      };
+    'areaName': areaName,
+    'score': score,
+    'maxScore': maxScore,
+  };
 
   factory ExamAreaScore.fromJson(Map<String, dynamic> json) => ExamAreaScore(
-        areaName: json['areaName'] as String,
-        score: (json['score'] as num).toDouble(),
-        maxScore: (json['maxScore'] as num).toDouble(),
-      );
+    areaName: json['areaName'] as String,
+    score: (json['score'] as num).toDouble(),
+    maxScore: (json['maxScore'] as num).toDouble(),
+  );
 }
 
 class ExamResult {
@@ -60,18 +60,18 @@ class ExamResult {
   }
 
   Map<String, dynamic> toJson() => {
-        'examId': examId,
-        'title': title,
-        'timestamp': timestamp.toIso8601String(),
-        'totalScore': totalScore,
-        'charAccuracy': charAccuracy,
-        'keywordAccuracy': keywordAccuracy,
-        'originalText': originalText,
-        'spokenText': spokenText,
-        'diffTokens': diffTokens.map((t) => t.toJson()).toList(),
-        if (areaScores != null)
-          'areaScores': areaScores!.map((a) => a.toJson()).toList(),
-      };
+    'examId': examId,
+    'title': title,
+    'timestamp': timestamp.toIso8601String(),
+    'totalScore': totalScore,
+    'charAccuracy': charAccuracy,
+    'keywordAccuracy': keywordAccuracy,
+    'originalText': originalText,
+    'spokenText': spokenText,
+    'diffTokens': diffTokens.map((t) => t.toJson()).toList(),
+    if (areaScores != null)
+      'areaScores': areaScores!.map((a) => a.toJson()).toList(),
+  };
 
   factory ExamResult.fromJson(Map<String, dynamic> json) {
     final rawTokens = json['diffTokens'] as List? ?? [];
@@ -89,7 +89,8 @@ class ExamResult {
     return ExamResult(
       examId: json['examId'] as String? ?? '',
       title: json['title'] as String? ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+      timestamp:
+          DateTime.tryParse(json['timestamp'] as String? ?? '') ??
           DateTime.now(),
       totalScore: (json['totalScore'] as num?)?.toDouble() ?? 0.0,
       charAccuracy: (json['charAccuracy'] as num?)?.toDouble() ?? 0.0,

@@ -50,10 +50,7 @@ class _QuickTriggerScreenState extends State<QuickTriggerScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          _QuickTriggerTabView(),
-          _TransitionDeckTabView(),
-        ],
+        children: const [_QuickTriggerTabView(), _TransitionDeckTabView()],
       ),
     );
   }
@@ -84,7 +81,10 @@ class _QuickTriggerTabView extends StatelessWidget {
                     value: d,
                     child: Text(
                       d.label,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                   );
                 }).toList(),
@@ -137,7 +137,8 @@ class _QuickTriggerTabView extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: provider.difficulty.durationSeconds > 0
-                  ? (provider.remainingSeconds / provider.difficulty.durationSeconds)
+                  ? (provider.remainingSeconds /
+                        provider.difficulty.durationSeconds)
                   : 0.0,
               minHeight: 10,
               backgroundColor: Colors.grey.shade200,
@@ -172,7 +173,10 @@ class _QuickTriggerTabView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(8),
@@ -261,12 +265,20 @@ class _QuickTriggerTabView extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.mic_off_outlined, size: 18, color: AppTheme.accentRed),
+                  const Icon(
+                    Icons.mic_off_outlined,
+                    size: 18,
+                    color: AppTheme.accentRed,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       provider.sttError!,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.4),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF991B1B),
+                        height: 1.4,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -299,14 +311,18 @@ class _QuickTriggerTabView extends StatelessWidget {
                 ),
                 child: Text(
                   "실시간 인식: \"${provider.spokenText}\"",
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
           ],
 
           // 6. 평가 결과: 듀얼 점수 카드 (순발력 점수 + 정확성 점수)
-          if (provider.cardState == TriggerCardState.revealed && provider.evalResult != null) ...[
+          if (provider.cardState == TriggerCardState.revealed &&
+              provider.evalResult != null) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -356,7 +372,10 @@ class _QuickTriggerTabView extends StatelessWidget {
                               ),
                               Text(
                                 "반응 속도: ${provider.reactionTimeSeconds.toStringAsFixed(2)}초 (음성 감지 기준)",
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF78350F)),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF78350F),
+                                ),
                               ),
                             ],
                           ),
@@ -424,7 +443,10 @@ class _QuickTriggerTabView extends StatelessWidget {
                       ),
                       child: Text(
                         "인식된 발화: \"${provider.spokenText}\"",
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -454,7 +476,9 @@ class _QuickTriggerTabView extends StatelessWidget {
               height: 52,
               child: ElevatedButton.icon(
                 onPressed: () => provider.finishAndScore(),
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentRed),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentRed,
+                ),
                 icon: const Icon(Icons.stop),
                 label: const Text("답변 완료 및 자동 채점하기"),
               ),
@@ -468,7 +492,9 @@ class _QuickTriggerTabView extends StatelessWidget {
                 onPressed: () => provider.nextCard(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryBlue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 icon: const Icon(Icons.arrow_forward),
                 label: const Text(
@@ -520,7 +546,10 @@ class _TransitionDeckTabView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.accentGold.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),

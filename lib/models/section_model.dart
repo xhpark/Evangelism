@@ -3,7 +3,8 @@ import 'step_item_model.dart';
 class Section {
   final String id;
   final String title;
-  final int? fingerIndex; // 1: 엄지(은혜), 2: 검지(인간), 3: 중지(하나님), 4: 약지(그리스도), 5: 소지(믿음)
+  final int?
+  fingerIndex; // 1: 엄지(은혜), 2: 검지(인간), 3: 중지(하나님), 4: 약지(그리스도), 5: 소지(믿음)
   final String? fingerName;
   final List<StepItem> steps;
 
@@ -44,12 +45,12 @@ class Section {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        if (fingerIndex != null) 'finger_index': fingerIndex,
-        if (fingerName != null) 'finger_name': fingerName,
-        'steps': steps.map((s) => s.toJson()).toList(),
-      };
+    'id': id,
+    'title': title,
+    if (fingerIndex != null) 'finger_index': fingerIndex,
+    if (fingerName != null) 'finger_name': fingerName,
+    'steps': steps.map((s) => s.toJson()).toList(),
+  };
 
   factory Section.fromJson(Map<String, dynamic> json) {
     final rawSteps = json['steps'] as List? ?? [];

@@ -30,6 +30,15 @@ void main() {
 2.2 인간
 2.2.1 핵심 진리: 인간은 모두 죄인이며 스스로 구원할 수 없습니다.
 
+2.3 하나님
+2.3.1 핵심 진리: 하나님은 자비로우시며 의로우십니다.
+
+2.4 그리스도
+2.4.1 핵심 진리: 예수 그리스도는 참 하나님이며 참 인간이십니다.
+
+2.5 믿음
+2.5.1 핵심 진리: 구원받는 믿음은 예수 그리스도만 신뢰하는 것입니다.
+
 3. 결신
 3.1 결신 질문: 이 영생의 선물을 지금 받기를 원하십니까?
 
@@ -61,6 +70,46 @@ void main() {
       // 양육 확인
       final follow = sections.firstWhere((s) => s.id == 'follow_up');
       expect(follow.steps[0].effectiveScript, contains("하나님의 자녀가 되신 것을 축하합니다"));
+    });
+
+    test('TS-IMPO-002: 구조 없는 텍스트는 기존 대본을 덮어쓰지 않는다', () async {
+      final repo = ScriptRepository();
+      await repo.updateStepScript('grace_1', '기존 사용자 문장');
+
+      expect(await repo.importFromPlainText('일반 메모 한 줄입니다.'), isFalse);
+      final sections = await repo.loadSections();
+      final grace = sections.firstWhere((section) => section.id == 'grace');
+      expect(grace.steps.first.effectiveScript, '기존 사용자 문장');
+    });
+
+    test('TS-IMPO-003: 가져오기 직전 사용자 대본으로 되돌릴 수 있다', () async {
+      final repo = ScriptRepository();
+      await repo.updateStepScript('intro_1', '가져오기 전 문장');
+      const structured = '''
+1. 서론
+1.1 일반 대화: 가져온 서론
+2.1 은혜
+2.1.1 영생은 선물: 가져온 은혜
+2.2 인간
+2.2.1 핵심 진리: 가져온 인간
+2.3 하나님
+2.3.1 핵심 진리: 가져온 하나님
+2.4 그리스도
+2.4.1 핵심 진리: 가져온 그리스도
+2.5 믿음
+2.5.1 핵심 진리: 가져온 믿음
+3. 결신
+3.1 결신 질문: 가져온 결신
+4. 양육
+4.1 생일 축하: 가져온 양육
+''';
+
+      expect(await repo.importFromPlainText(structured), isTrue);
+      expect(await repo.undoLastImport(), isTrue);
+      final sections = await repo.loadSections();
+      final intro = sections.firstWhere((section) => section.id == 'intro');
+      expect(intro.steps.first.effectiveScript, '가져오기 전 문장');
+      expect(await repo.undoLastImport(), isFalse);
     });
   });
 }

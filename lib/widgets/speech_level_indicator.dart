@@ -15,7 +15,9 @@ class SpeechLevelIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scale = isListening ? (1.0 + (soundLevel.clamp(0.0, 10.0) / 15.0)) : 1.0;
+    final scale = isListening
+        ? (1.0 + (soundLevel.clamp(0.0, 10.0) / 15.0))
+        : 1.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -39,8 +41,11 @@ class SpeechLevelIndicator extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (isListening ? AppTheme.accentRed : AppTheme.primaryBlue)
-                        .withValues(alpha: 0.35),
+                    color:
+                        (isListening
+                                ? AppTheme.accentRed
+                                : AppTheme.primaryBlue)
+                            .withValues(alpha: 0.35),
                     blurRadius: isListening ? 20 : 10,
                     spreadRadius: isListening ? 4 : 1,
                   ),

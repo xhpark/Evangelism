@@ -56,7 +56,10 @@ class TTSService {
 
   /// 음절 기반 잔여 텍스트 계산
   static String calculateRemainingText(
-      String fullText, double elapsedSeconds, double currentSpeed) {
+    String fullText,
+    double elapsedSeconds,
+    double currentSpeed,
+  ) {
     final text = fullText.trim();
     if (text.isEmpty) return text;
 
@@ -75,8 +78,9 @@ class TTSService {
     int targetWordIndex = 0;
 
     for (int i = 0; i < words.length; i++) {
-      final wordSyllables =
-          words[i].replaceAll(RegExp(r'[^가-힣0-9a-zA-Z]'), '').length;
+      final wordSyllables = words[i]
+          .replaceAll(RegExp(r'[^가-힣0-9a-zA-Z]'), '')
+          .length;
       final effectiveCount = wordSyllables > 0 ? wordSyllables : 1;
 
       if (accumulatedSyllables + effectiveCount >= elapsedSyllables) {
@@ -153,7 +157,8 @@ class TTSService {
             final lowerName = name.toLowerCase().replaceAll('_', '-');
 
             // 인도 콩카니어(kok / kok-IN) 제외 및 순수 한국어(ko / kor / ko-KR)만 추출
-            final isKorean = (lowerLocale.startsWith('ko-') ||
+            final isKorean =
+                (lowerLocale.startsWith('ko-') ||
                     lowerLocale == 'ko' ||
                     lowerLocale.startsWith('kor') ||
                     lowerName.contains('ko-kr') ||
@@ -164,13 +169,19 @@ class TTSService {
 
             if (isKorean) {
               String friendlyName;
-              if (lowerName.contains('koc') || lowerName.contains('female1') || lowerName.contains('f00')) {
+              if (lowerName.contains('koc') ||
+                  lowerName.contains('female1') ||
+                  lowerName.contains('f00')) {
                 friendlyName = "보이스 $index (구글 자연스러운 여성 톤 C)";
-              } else if (lowerName.contains('kob') || lowerName.contains('female2') || lowerName.contains('f01')) {
+              } else if (lowerName.contains('kob') ||
+                  lowerName.contains('female2') ||
+                  lowerName.contains('f01')) {
                 friendlyName = "보이스 $index (구글 부드러운 여성 톤 B)";
               } else if (lowerName.contains('koe')) {
                 friendlyName = "보이스 $index (구글 차분한 여성 톤 E)";
-              } else if (lowerName.contains('kod') || lowerName.contains('male1') || lowerName.contains('m00')) {
+              } else if (lowerName.contains('kod') ||
+                  lowerName.contains('male1') ||
+                  lowerName.contains('m00')) {
                 friendlyName = "보이스 $index (구글 신뢰감 있는 남성 톤 D)";
               } else if (lowerName.contains('ism')) {
                 friendlyName = "보이스 $index (구글 또렷한 남성 톤 A)";
@@ -178,21 +189,26 @@ class TTSService {
                 friendlyName = "보이스 $index (구글 중후한 남성 톤 F)";
               } else if (lowerName.contains('smt')) {
                 friendlyName = "보이스 $index (삼성 고품질 보이스)";
-              } else if (lowerName.contains('language') || lowerName.contains('default')) {
+              } else if (lowerName.contains('language') ||
+                  lowerName.contains('default')) {
                 friendlyName = "보이스 $index (삼성 기본 보이스)";
-              } else if (lowerName.contains('woman') || lowerName.contains('female')) {
+              } else if (lowerName.contains('woman') ||
+                  lowerName.contains('female')) {
                 friendlyName = "보이스 $index (한국어 여성 톤)";
-              } else if (lowerName.contains('man') || lowerName.contains('male')) {
+              } else if (lowerName.contains('man') ||
+                  lowerName.contains('male')) {
                 friendlyName = "보이스 $index (한국어 남성 톤)";
               } else {
                 friendlyName = "보이스 $index (한국어 표준 보이스)";
               }
 
-              list.add(TTSVoiceInfo(
-                name: name,
-                locale: locale.isEmpty ? 'ko-KR' : locale,
-                displayName: friendlyName,
-              ));
+              list.add(
+                TTSVoiceInfo(
+                  name: name,
+                  locale: locale.isEmpty ? 'ko-KR' : locale,
+                  displayName: friendlyName,
+                ),
+              );
               index++;
             }
           }
@@ -200,11 +216,13 @@ class TTSService {
       }
 
       if (list.isEmpty) {
-        list.add(TTSVoiceInfo(
-          name: 'ko-kr-default',
-          locale: 'ko-KR',
-          displayName: '기본 고품질 한국어 보이스',
-        ));
+        list.add(
+          TTSVoiceInfo(
+            name: 'ko-kr-default',
+            locale: 'ko-KR',
+            displayName: '기본 고품질 한국어 보이스',
+          ),
+        );
       }
 
       _availableVoices = list;
@@ -217,10 +235,16 @@ class TTSService {
       if (_selectedVoiceName.isNotEmpty) {
         final match = list.where((v) => v.name == _selectedVoiceName);
         if (match.isNotEmpty) {
-          await _tts.setVoice({"name": match.first.name, "locale": match.first.locale});
+          await _tts.setVoice({
+            "name": match.first.name,
+            "locale": match.first.locale,
+          });
         } else if (list.isNotEmpty) {
           _selectedVoiceName = list.first.name;
-          await _tts.setVoice({"name": list.first.name, "locale": list.first.locale});
+          await _tts.setVoice({
+            "name": list.first.name,
+            "locale": list.first.locale,
+          });
         }
       }
 
@@ -264,9 +288,14 @@ class TTSService {
       await _tts.setPitch(_pitch);
       await _tts.setSpeechRate(_platformRate(_speedRate));
       if (_selectedVoiceName.isNotEmpty && _availableVoices.isNotEmpty) {
-        final match = _availableVoices.where((v) => v.name == _selectedVoiceName);
+        final match = _availableVoices.where(
+          (v) => v.name == _selectedVoiceName,
+        );
         if (match.isNotEmpty) {
-          await _tts.setVoice({"name": match.first.name, "locale": match.first.locale});
+          await _tts.setVoice({
+            "name": match.first.name,
+            "locale": match.first.locale,
+          });
         }
       }
     } catch (_) {}

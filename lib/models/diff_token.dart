@@ -10,21 +10,17 @@ class DiffToken {
   final DiffType type;
   final String? originalText; // 대체(substituted)인 경우 원래 텍스트
 
-  DiffToken({
-    required this.text,
-    required this.type,
-    this.originalText,
-  });
+  DiffToken({required this.text, required this.type, this.originalText});
 
   Map<String, dynamic> toJson() => {
-        'text': text,
-        'type': type.name,
-        if (originalText != null) 'originalText': originalText,
-      };
+    'text': text,
+    'type': type.name,
+    if (originalText != null) 'originalText': originalText,
+  };
 
   factory DiffToken.fromJson(Map<String, dynamic> json) => DiffToken(
-        text: json['text'] as String,
-        type: DiffType.values.byName(json['type'] as String),
-        originalText: json['originalText'] as String?,
-      );
+    text: json['text'] as String,
+    type: DiffType.values.byName(json['type'] as String),
+    originalText: json['originalText'] as String?,
+  );
 }

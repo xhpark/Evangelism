@@ -84,6 +84,7 @@ class VoiceExamProvider extends ChangeNotifier {
   /// 실전 시험은 한 문항이 길기 때문에 [keepAlive]로 수음을 유지한다.
   /// 숨을 고르느라 4초 이상 쉬어 인식기가 멈춰도 지금까지의 인식 결과에 이어서 자동 재개된다.
   Future<void> startExamRecording() async {
+    if (_isListening || _isScoring) return;
     if (_currentQuestion == null) await generateNewQuestion();
 
     _liveSpokenText = '';
@@ -124,6 +125,7 @@ class VoiceExamProvider extends ChangeNotifier {
 
   /// 시험 녹음 정지 및 자동 채점
   Future<void> finishAndScoreExam() async {
+    if (_isScoring || !_isListening) return;
     _isListening = false;
     await _stt.stopListening();
     await DeviceHelperService.disableKeepScreenOn();
@@ -149,21 +151,22 @@ class VoiceExamProvider extends ChangeNotifier {
 
     // 전체 완주 시험은 지문이 7,000자를 넘어 편집거리 계산이 무겁다.
     // 별도 아이솔레이트에서 채점해 화면이 멈추지 않도록 한다.
-    final result = await ScoringEngine.calculateScoreAsync(
-      examId: 'exam_${DateTime.now().millisecondsSinceEpoch}',
-      title: _currentQuestion!.title,
-      originalText: _currentQuestion!.originalText,
-      spokenText: _liveSpokenText,
-      keywords: _currentQuestion!.keywords,
-      areaScores: areaBreakdown,
-    );
-
-    _lastResult = result;
-    await _repository.saveExamResult(result);
-    _history = await _repository.getExamHistory();
-
-    _isScoring = false;
-    notifyListeners();
+    try {
+      final result = await ScoringEngine.calculateScoreAsync(
+        examId: 'exam_${DateTime.now().millisecondsSinceEpoch}',
+        title: _currentQuestion!.title,
+        originalText: _currentQuestion!.originalText,
+        spokenText: _liveSpokenText,
+        keywords: _currentQuestion!.keywords,
+        areaScores: areaBreakdown,
+      );
+      _lastResult = result;
+      await _repository.saveExamResult(result);
+      _history = await _repository.getExamHistory();
+    } finally {
+      _isScoring = false;
+      notifyListeners();
+    }
   }
 
   /// 녹음 취소

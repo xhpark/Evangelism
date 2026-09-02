@@ -20,7 +20,9 @@ class ScriptureProvider extends ChangeNotifier {
   bool get blankQuizMode => _blankQuizMode;
 
   ScriptureCard? get currentCard =>
-      (_cards.isNotEmpty && _currentIndex < _cards.length) ? _cards[_currentIndex] : null;
+      (_cards.isNotEmpty && _currentIndex < _cards.length)
+      ? _cards[_currentIndex]
+      : null;
 
   void toggleShowText() {
     _showText = !_showText;

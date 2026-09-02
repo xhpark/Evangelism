@@ -55,4 +55,10 @@ class ScriptManageProvider extends ChangeNotifier {
     }
     return success;
   }
+
+  Future<bool> undoLastImport() async {
+    final success = await _repository.undoLastImport();
+    if (success) await loadData();
+    return success;
+  }
 }

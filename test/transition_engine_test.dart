@@ -28,7 +28,14 @@ void main() {
       // 대지 순서대로 배치되는지 확인
       expect(
         list.map((t) => t.stepId).toList(),
-        equals(['intro_6', 'grace_4', 'human_5', 'god_4', 'christ_5', 'faith_4']),
+        equals([
+          'intro_6',
+          'grace_4',
+          'human_5',
+          'god_4',
+          'christ_5',
+          'faith_4',
+        ]),
       );
     });
 

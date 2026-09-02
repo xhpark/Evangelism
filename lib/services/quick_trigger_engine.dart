@@ -10,11 +10,7 @@ enum TriggerDifficulty {
   const TriggerDifficulty(this.durationSeconds, this.label);
 }
 
-enum TriggerCardState {
-  ready,
-  countdown,
-  revealed,
-}
+enum TriggerCardState { ready, countdown, revealed }
 
 class QuickTriggerEngine {
   /// 난이도별 제시 단어(어절) 수 반환
@@ -31,7 +27,10 @@ class QuickTriggerEngine {
   }
 
   /// 문장 선두부(Lead-in text) 난이도별 가변 추출
-  static String extractLeadIn(String script, {TriggerDifficulty difficulty = TriggerDifficulty.master}) {
+  static String extractLeadIn(
+    String script, {
+    TriggerDifficulty difficulty = TriggerDifficulty.master,
+  }) {
     if (script.isEmpty) return '';
     final words = script.split(' ').where((w) => w.isNotEmpty).toList();
     final count = getWordCountForDifficulty(difficulty);
@@ -40,7 +39,10 @@ class QuickTriggerEngine {
   }
 
   /// 전체 스텝 리스트를 셔플하여 순발력 테스트 카드 덱 생성
-  static List<StepItem> generateDeck(List<StepItem> allSteps, {bool onlyTransitions = false}) {
+  static List<StepItem> generateDeck(
+    List<StepItem> allSteps, {
+    bool onlyTransitions = false,
+  }) {
     List<StepItem> pool = allSteps;
     if (onlyTransitions) {
       pool = allSteps.where((s) => s.isTransition).toList();

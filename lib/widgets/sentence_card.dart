@@ -9,7 +9,7 @@ class SentenceCard extends StatefulWidget {
   final bool isActive;
   final bool isBlindMode;
   final VoidCallback onPlay;
-  final Function(String newText)? onEdit;
+  final Future<void> Function(String newText)? onEdit;
 
   const SentenceCard({
     super.key,
@@ -42,8 +42,8 @@ class _SentenceCardState extends State<SentenceCard> {
           color: isFocused
               ? AppTheme.primaryBlue
               : isTransition
-                  ? AppTheme.accentGold.withValues(alpha: 0.5)
-                  : Colors.grey.shade200,
+              ? AppTheme.accentGold.withValues(alpha: 0.5)
+              : Colors.grey.shade200,
           width: isFocused ? 2.0 : 1.0,
         ),
         boxShadow: isFocused
@@ -93,9 +93,14 @@ class _SentenceCardState extends State<SentenceCard> {
                           _buildTypeBadge(widget.step),
                           if (isTransition)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentGold.withValues(alpha: 0.15),
+                                color: AppTheme.accentGold.withValues(
+                                  alpha: 0.15,
+                                ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text(
@@ -117,10 +122,17 @@ class _SentenceCardState extends State<SentenceCard> {
                         // 문장 개별 듣기 버튼
                         IconButton(
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
                           icon: Icon(
-                            isFocused ? Icons.volume_up : Icons.volume_down_outlined,
-                            color: isFocused ? AppTheme.primaryBlue : AppTheme.textMuted,
+                            isFocused
+                                ? Icons.volume_up
+                                : Icons.volume_down_outlined,
+                            color: isFocused
+                                ? AppTheme.primaryBlue
+                                : AppTheme.textMuted,
                             size: 20,
                           ),
                           onPressed: widget.onPlay,
@@ -130,7 +142,10 @@ class _SentenceCardState extends State<SentenceCard> {
                         // 문장 수정 버튼 (직접 편집 가능)
                         IconButton(
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
                           icon: const Icon(
                             Icons.edit_note,
                             color: AppTheme.primaryBlue,
@@ -143,10 +158,17 @@ class _SentenceCardState extends State<SentenceCard> {
                         // 복사 메뉴
                         PopupMenuButton<String>(
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 32),
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 32,
+                          ),
                           onSelected: (val) {
                             if (val == 'copy') {
-                              Clipboard.setData(ClipboardData(text: widget.step.effectiveScript));
+                              Clipboard.setData(
+                                ClipboardData(
+                                  text: widget.step.effectiveScript,
+                                ),
+                              );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("클립보드에 복사되었습니다.")),
                               );
@@ -164,7 +186,11 @@ class _SentenceCardState extends State<SentenceCard> {
                               ),
                             ),
                           ],
-                          child: const Icon(Icons.more_vert, size: 18, color: AppTheme.textMuted),
+                          child: const Icon(
+                            Icons.more_vert,
+                            size: 18,
+                            color: AppTheme.textMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -180,8 +206,12 @@ class _SentenceCardState extends State<SentenceCard> {
                       style: TextStyle(
                         fontSize: 15,
                         height: 1.55,
-                        fontWeight: isFocused ? FontWeight.bold : FontWeight.w500,
-                        color: isFocused ? AppTheme.textDark : const Color(0xFF334155),
+                        fontWeight: isFocused
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        color: isFocused
+                            ? AppTheme.textDark
+                            : const Color(0xFF334155),
                       ),
                     ),
                     if (widget.isBlindMode && !_revealed)
@@ -195,7 +225,11 @@ class _SentenceCardState extends State<SentenceCard> {
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.touch_app, size: 16, color: AppTheme.primaryBlue),
+                                  Icon(
+                                    Icons.touch_app,
+                                    size: 16,
+                                    color: AppTheme.primaryBlue,
+                                  ),
                                   SizedBox(width: 4),
                                   Text(
                                     "탭하여 원문 확인",
@@ -218,7 +252,10 @@ class _SentenceCardState extends State<SentenceCard> {
                 if (widget.step.reference != null) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(6),
@@ -307,7 +344,10 @@ class _SentenceCardState extends State<SentenceCard> {
             Expanded(
               child: Text(
                 "${widget.step.name} 수정",
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -331,15 +371,16 @@ class _SentenceCardState extends State<SentenceCard> {
             child: const Text("취소"),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final newText = controller.text.trim();
               if (newText.isNotEmpty) {
-                widget.onEdit?.call(newText);
+                await widget.onEdit?.call(newText);
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("문장이 성공적으로 수정되어 저장되었습니다.")),
                 );
               }
-              Navigator.pop(ctx);
+              if (context.mounted) Navigator.pop(ctx);
             },
             child: const Text("저장 및 즉시 반영"),
           ),

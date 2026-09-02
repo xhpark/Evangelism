@@ -17,7 +17,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.44.0'
           cache: true
 
       - name: 의존성 설치
@@ -26,5 +26,17 @@ jobs:
       - name: 정적 분석 (경고 0건 유지)
         run: flutter analyze
 
+      - name: 포맷 검증
+        run: dart format --output=none --set-exit-if-changed lib test scripts/check_coverage.dart
+
       - name: 단위 · 위젯 테스트
-        run: flutter test
+        run: flutter test --coverage
+
+      - name: Apps Script 백엔드 통합 테스트
+        run: node scripts/google_apps_script_backend.test.js
+
+      - name: 커버리지 하한 검증
+        run: dart run scripts/check_coverage.dart coverage/lcov.info 45
+
+      - name: Android 디버그 APK 빌드
+        run: flutter build apk --debug --dart-define=LICENSE_API_URL=https://script.google.com/macros/s/ci-placeholder/exec

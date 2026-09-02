@@ -24,13 +24,13 @@ class ScoreRequest {
 }
 
 ExamResult _scoreInIsolate(ScoreRequest req) => ScoringEngine.calculateScore(
-      examId: req.examId,
-      title: req.title,
-      originalText: req.originalText,
-      spokenText: req.spokenText,
-      keywords: req.keywords,
-      areaScores: req.areaScores,
-    );
+  examId: req.examId,
+  title: req.title,
+  originalText: req.originalText,
+  spokenText: req.spokenText,
+  keywords: req.keywords,
+  areaScores: req.areaScores,
+);
 
 class ScoringEngine {
   /// 긴 지문은 편집거리 계산이 O(n×m)이라 UI 스레드를 수 초간 멈춘다.
@@ -60,6 +60,7 @@ class ScoringEngine {
     }
     return compute(_scoreInIsolate, req);
   }
+
   /// 종합 점수 및 Diff 토큰 생성
   static ExamResult calculateScore({
     required String examId,
@@ -98,20 +99,14 @@ class ScoringEngine {
 
     // 2. 단어/토큰 단위 일치도
     final origWords = normOrig.split(' ').where((w) => w.isNotEmpty).toList();
-    final spokenWords = normSpoken.split(' ').where((w) => w.isNotEmpty).toList();
+    final spokenWords = normSpoken
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .toList();
 
-    int matchedWordCount = 0;
-    final spokenSet = spokenWords.toSet();
-    for (final w in origWords) {
-      if (spokenSet.contains(w)) {
-        matchedWordCount++;
-      } else {
-        // 조사/어미 차이만 있는 경우에만 정답으로 인정한다.
-        // (2026-08-29: "앞 2글자만 겹치면 정답" 규칙은 오답을 정답으로 세어 제거)
-        final partialMatch = spokenWords.any((sw) => isSameWordStem(w, sw));
-        if (partialMatch) matchedWordCount++;
-      }
-    }
+    // 순서와 반복 횟수를 보존하는 최장 공통 부분수열 길이로 계산한다.
+    // Set 기반 계산은 한 번 말한 단어로 원문의 모든 반복을 맞힌 것으로 처리했다.
+    final matchedWordCount = _orderedMatchedWordCount(origWords, spokenWords);
     final tokenAcc = origWords.isEmpty
         ? 1.0
         : min(1.0, matchedWordCount / origWords.length);
@@ -122,7 +117,8 @@ class ScoringEngine {
       int kwMatched = 0;
       for (final kw in keywords) {
         final normKw = KoreanTextNormalizer.normalize(kw);
-        if (normSpoken.contains(normKw) || spokenWords.any((w) => w.contains(normKw))) {
+        if (normSpoken.contains(normKw) ||
+            spokenWords.any((w) => w.contains(normKw))) {
           kwMatched++;
         }
       }
@@ -156,10 +152,46 @@ class ScoringEngine {
 
   /// 한국어 조사 목록 (긴 것부터 검사)
   static const List<String> _josa = [
-    '으로서', '으로써', '이라고', '라고는', '에게서', '으로', '에서', '에게', '한테',
-    '까지', '부터', '보다', '처럼', '마다', '이라', '라도', '이나', '나마', '조차',
-    '만을', '만은', '으로', '와의', '과의', '들이', '들을',
-    '은', '는', '이', '가', '을', '를', '에', '의', '도', '만', '과', '와', '로', '야',
+    '으로서',
+    '으로써',
+    '이라고',
+    '라고는',
+    '에게서',
+    '으로',
+    '에서',
+    '에게',
+    '한테',
+    '까지',
+    '부터',
+    '보다',
+    '처럼',
+    '마다',
+    '이라',
+    '라도',
+    '이나',
+    '나마',
+    '조차',
+    '만을',
+    '만은',
+    '으로',
+    '와의',
+    '과의',
+    '들이',
+    '들을',
+    '은',
+    '는',
+    '이',
+    '가',
+    '을',
+    '를',
+    '에',
+    '의',
+    '도',
+    '만',
+    '과',
+    '와',
+    '로',
+    '야',
   ];
 
   /// 어간이 같은 단어인지 판정한다.
@@ -193,6 +225,25 @@ class ScoringEngine {
       }
     }
     return word;
+  }
+
+  static int _orderedMatchedWordCount(
+    List<String> original,
+    List<String> spoken,
+  ) {
+    var previous = List<int>.filled(spoken.length + 1, 0);
+    for (final originalWord in original) {
+      final current = List<int>.filled(spoken.length + 1, 0);
+      for (var index = 1; index <= spoken.length; index++) {
+        if (isSameWordStem(originalWord, spoken[index - 1])) {
+          current[index] = previous[index - 1] + 1;
+        } else {
+          current[index] = max(previous[index], current[index - 1]);
+        }
+      }
+      previous = current;
+    }
+    return previous.last;
   }
 
   /// Levenshtein Distance
@@ -229,7 +280,9 @@ class ScoringEngine {
   /// 정통 Myers Diff가 아니라, 앞으로 3어절까지 살펴보며 맞춰가는 그리디 정렬이다.
   /// (문서·UI 표기도 '어절 대조'로 통일했다 — 2026-08-29)
   static List<DiffToken> _generateDiffTokens(
-      List<String> origWords, List<String> spokenWords) {
+    List<String> origWords,
+    List<String> spokenWords,
+  ) {
     final tokens = <DiffToken>[];
     int oIdx = 0;
     int sIdx = 0;
@@ -243,10 +296,9 @@ class ScoringEngine {
         oIdx++;
         sIdx++;
       } else if (isSameWordStem(oWord, sWord)) {
-        tokens.add(DiffToken(
-            text: sWord,
-            type: DiffType.matched,
-            originalText: oWord));
+        tokens.add(
+          DiffToken(text: sWord, type: DiffType.matched, originalText: oWord),
+        );
         oIdx++;
         sIdx++;
       } else {
@@ -262,7 +314,9 @@ class ScoringEngine {
         if (lookaheadO != -1) {
           // 중간의 원문 단어들은 누락(Missing) 처리
           while (oIdx < lookaheadO) {
-            tokens.add(DiffToken(text: origWords[oIdx], type: DiffType.missing));
+            tokens.add(
+              DiffToken(text: origWords[oIdx], type: DiffType.missing),
+            );
             oIdx++;
           }
           tokens.add(DiffToken(text: sWord, type: DiffType.matched));
@@ -270,10 +324,9 @@ class ScoringEngine {
           sIdx++;
         } else {
           // 사용자 추가/대체 발화
-          tokens.add(DiffToken(
-              text: sWord,
-              type: DiffType.extra,
-              originalText: oWord));
+          tokens.add(
+            DiffToken(text: sWord, type: DiffType.extra, originalText: oWord),
+          );
           sIdx++;
           oIdx++;
         }

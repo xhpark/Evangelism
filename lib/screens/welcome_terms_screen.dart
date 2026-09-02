@@ -14,9 +14,10 @@ class WelcomeTermsScreen extends StatefulWidget {
 
 class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
   bool _isAgreed = false;
+  bool _isPrivacyAgreed = false;
 
   void _onStartLearning() {
-    if (!_isAgreed) return;
+    if (!_isAgreed || !_isPrivacyAgreed) return;
     final license = Provider.of<LicenseService>(context, listen: false);
     if (license.isActivated) {
       Navigator.of(context).pushReplacement(
@@ -31,6 +32,7 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appVersion = context.watch<LicenseService>().appVersion;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
@@ -38,7 +40,10 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -63,10 +68,15 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                         child: Image.asset(
                           'assets/images/app_logo.png',
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: AppTheme.primaryNavy,
-                            child: const Icon(Icons.menu_book, color: AppTheme.accentGold, size: 44),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: AppTheme.primaryNavy,
+                                child: const Icon(
+                                  Icons.menu_book,
+                                  color: AppTheme.accentGold,
+                                  size: 44,
+                                ),
+                              ),
                         ),
                       ),
                     ),
@@ -96,16 +106,25 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
 
                     // 뱃지
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.2)),
+                        border: Border.all(
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.lock_outline, size: 13, color: AppTheme.primaryBlue),
+                          Icon(
+                            Icons.lock_outline,
+                            size: 13,
+                            color: AppTheme.primaryBlue,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             "개인 학습 전용 비공개 훈련 도구",
@@ -121,9 +140,9 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                     const SizedBox(height: 6),
 
                     // 버전 및 배포 날짜
-                    const Text(
-                      "Version 2.0.0 (2026.08.29)",
-                      style: TextStyle(
+                    Text(
+                      "Version $appVersion",
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF64748B),
@@ -159,6 +178,16 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                             content:
                                 "• 복음 제시 전문 텍스트 및 전도폭발 훈련 체계의 지적재산권과 저작권은 사단법인 한국전도폭발본부(Evangelism Explosion International)에 있습니다.\n"
                                 "• 본 모바일 훈련 애플리케이션의 아키텍처 설계, 알고리즘 및 프로그램 소유권은 개발자 박상환(xhpark@naver.com)에게 있습니다.",
+                          ),
+                          const Divider(height: 24, thickness: 0.8),
+                          _buildTermSection(
+                            icon: Icons.privacy_tip_outlined,
+                            iconColor: AppTheme.primaryBlue,
+                            title: "개인정보 처리 안내",
+                            content:
+                                "• 기기 활성화와 승인 확인을 위해 기기 코드, 성명, 소속, 운영체제 및 앱 버전이 라이선스 서버로 전송됩니다.\n"
+                                "• 개인 간증, 수정 대본, 음성인식 결과와 시험 기록은 이 기기에만 저장되며 라이선스 서버로 전송하지 않습니다.\n"
+                                "• 활성화 정보는 승인 관리와 부정 사용 차단 목적으로 보관되며, 삭제 요청은 개발자에게 문의할 수 있습니다.",
                           ),
                           const Divider(height: 24, thickness: 0.8),
 
@@ -252,6 +281,38 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                       ),
                     ),
                   ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () =>
+                        setState(() => _isPrivacyAgreed = !_isPrivacyAgreed),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Checkbox(
+                            value: _isPrivacyAgreed,
+                            activeColor: AppTheme.primaryBlue,
+                            onChanged: (value) => setState(
+                              () => _isPrivacyAgreed = value ?? false,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            "위 개인정보의 수집·이용 범위와 기기 내 저장 범위를 확인하고 동의합니다. (필수)",
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 12),
 
                   // 시작 버튼
@@ -259,14 +320,16 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _isAgreed ? _onStartLearning : null,
+                      onPressed: _isAgreed && _isPrivacyAgreed
+                          ? _onStartLearning
+                          : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryBlue,
                         disabledBackgroundColor: Colors.grey.shade300,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: _isAgreed ? 2 : 0,
+                        elevation: _isAgreed && _isPrivacyAgreed ? 2 : 0,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -276,14 +339,18 @@ class _WelcomeTermsScreenState extends State<WelcomeTermsScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: _isAgreed ? Colors.white : Colors.grey.shade500,
+                              color: _isAgreed && _isPrivacyAgreed
+                                  ? Colors.white
+                                  : Colors.grey.shade500,
                             ),
                           ),
                           const SizedBox(width: 6),
                           Icon(
                             Icons.arrow_forward,
                             size: 18,
-                            color: _isAgreed ? Colors.white : Colors.grey.shade500,
+                            color: _isAgreed && _isPrivacyAgreed
+                                ? Colors.white
+                                : Colors.grey.shade500,
                           ),
                         ],
                       ),

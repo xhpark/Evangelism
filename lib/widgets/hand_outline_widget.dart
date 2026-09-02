@@ -48,7 +48,9 @@ class HandOutlineWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  isFollowUpMode ? "🖐️ 영적 성장 5대 수단 (손가락 원리)" : "🖐️ 복음 5대 핵심 개요 (Hand Outline)",
+                  isFollowUpMode
+                      ? "🖐️ 영적 성장 5대 수단 (손가락 원리)"
+                      : "🖐️ 복음 5대 핵심 개요 (Hand Outline)",
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -80,24 +82,33 @@ class HandOutlineWidget extends StatelessWidget {
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade50,
+                        color: isSelected
+                            ? AppTheme.primaryBlue
+                            : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade300,
+                          color: isSelected
+                              ? AppTheme.primaryBlue
+                              : Colors.grey.shade300,
                           width: isSelected ? 1.5 : 1.0,
                         ),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(item['icon']!, style: const TextStyle(fontSize: 18)),
+                          Text(
+                            item['icon']!,
+                            style: const TextStyle(fontSize: 18),
+                          ),
                           const SizedBox(height: 2),
                           Text(
                             item['label']!,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : AppTheme.textDark,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppTheme.textDark,
                             ),
                           ),
                         ],

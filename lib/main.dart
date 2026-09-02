@@ -82,7 +82,11 @@ class StartupErrorApp extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, size: 56, color: Color(0xFFDC2626)),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 56,
+                    color: Color(0xFFDC2626),
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     "교재 데이터를 불러오지 못했습니다",
@@ -93,7 +97,11 @@ class StartupErrorApp extends StatelessWidget {
                   const Text(
                     "앱을 완전히 종료한 뒤 다시 실행해 주세요.\n"
                     "문제가 계속되면 앱을 재설치하시거나 개발자(xhpark@naver.com)에게 아래 내용을 알려주세요.",
-                    style: TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.5),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF475569),
+                      height: 1.5,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -106,7 +114,10 @@ class StartupErrorApp extends StatelessWidget {
                     ),
                     child: Text(
                       message,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ),
                 ],

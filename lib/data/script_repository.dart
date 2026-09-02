@@ -10,6 +10,8 @@ class ScriptRepository {
   static const String _userChurchKey = 'just_ee_user_church';
   static const String _examHistoryKey = 'just_ee_exam_history';
   static const String _mistakesKey = 'just_ee_mistakes';
+  static const String _importBackupKey =
+      'just_ee_custom_scripts_import_backup_v1';
 
   List<Section>? _cachedSections;
 
@@ -17,8 +19,7 @@ class ScriptRepository {
   Future<List<Section>> loadSections() async {
     if (_cachedSections != null) return _cachedSections!;
 
-    final jsonString =
-        await rootBundle.loadString('data/just_ee_data.json');
+    final jsonString = await rootBundle.loadString('data/just_ee_data.json');
     final Map<String, dynamic> data = json.decode(jsonString);
     final List<dynamic> sectionList = data['sections'] ?? [];
 
@@ -35,17 +36,17 @@ class ScriptRepository {
       for (var step in sec.steps) {
         if (customMap.containsKey(step.stepId)) {
           step.customScript = customMap[step.stepId];
-        }
-
-        // 나의 간증 (intro_2) 개인화 오버라이드
-        if (step.stepId == 'intro_2' && userTestimony.isNotEmpty) {
+        } else if (step.stepId == 'intro_2' && userTestimony.isNotEmpty) {
+          // 이전 버전에서 별도 저장된 간증은 직접 수정본이 없을 때만 마이그레이션한다.
           step.customScript = userTestimony;
         }
 
         // 교회명 치환
-        if (userChurch.isNotEmpty && step.customScript != null) {
-          step.customScript =
-              step.customScript!.replaceAll('[교회 이름]', userChurch);
+        if (userChurch.isNotEmpty && step.effectiveScript.contains('[교회 이름]')) {
+          step.customScript = step.effectiveScript.replaceAll(
+            '[교회 이름]',
+            userChurch,
+          );
         }
       }
     }
@@ -93,6 +94,8 @@ class ScriptRepository {
   Future<void> saveUserChurch(String churchName) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userChurchKey, churchName);
+    _cachedSections = null;
+    await loadSections();
   }
 
   Future<String> getUserChurch() async {
@@ -111,8 +114,9 @@ class ScriptRepository {
     final list = await getExamHistory();
     list.insert(0, result);
 
-    final trimmed =
-        list.length > maxExamHistory ? list.sublist(0, maxExamHistory) : list;
+    final trimmed = list.length > maxExamHistory
+        ? list.sublist(0, maxExamHistory)
+        : list;
     final encoded = json.encode(trimmed.map((r) => r.toJson()).toList());
     await prefs.setString(_examHistoryKey, encoded);
   }
@@ -178,6 +182,7 @@ class ScriptRepository {
 
     final sections = await loadSections();
     final lines = text.split('\n');
+    final detectedSections = <String>{};
 
     String? currentSecId;
     final Map<String, List<String>> sectionLines = {
@@ -200,42 +205,92 @@ class ScriptRepository {
       String? detectedSec;
       final trimmed = line.replaceAll(RegExp(r'^#+\s*'), '').trim();
 
-      if (RegExp(r'^(?:1[\.\s]+|1\s*장[\.\s]*)?(?:서론|Introduction)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '1. 서론' || trimmed == '1.서론' || trimmed == '서론') {
+      if (RegExp(
+            r'^(?:1[\.\s]+|1\s*장[\.\s]*)?(?:서론|Introduction)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '1. 서론' ||
+          trimmed == '1.서론' ||
+          trimmed == '서론') {
         detectedSec = 'intro';
         isSectionHeader = true;
-      } else if (RegExp(r'^(?:2\.1[\.\s]+|2-1[\.\s]*)?(?:은혜|Grace)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '2.1 은혜' || trimmed == '2.1. 은혜' || trimmed == '2.1은혜' || trimmed == '은혜') {
+      } else if (RegExp(
+            r'^(?:2\.1[\.\s]+|2-1[\.\s]*)?(?:은혜|Grace)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '2.1 은혜' ||
+          trimmed == '2.1. 은혜' ||
+          trimmed == '2.1은혜' ||
+          trimmed == '은혜') {
         detectedSec = 'grace';
         isSectionHeader = true;
-      } else if (RegExp(r'^(?:2\.2[\.\s]+|2-2[\.\s]*)?(?:인간|Humanity)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '2.2 인간' || trimmed == '2.2. 인간' || trimmed == '2.2인간' || trimmed == '인간') {
+      } else if (RegExp(
+            r'^(?:2\.2[\.\s]+|2-2[\.\s]*)?(?:인간|Humanity)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '2.2 인간' ||
+          trimmed == '2.2. 인간' ||
+          trimmed == '2.2인간' ||
+          trimmed == '인간') {
         detectedSec = 'humanity';
         isSectionHeader = true;
-      } else if (RegExp(r'^(?:2\.3[\.\s]+|2-3[\.\s]*)?(?:하나님|God)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '2.3 하나님' || trimmed == '2.3. 하나님' || trimmed == '2.3하나님' || trimmed == '하나님') {
+      } else if (RegExp(
+            r'^(?:2\.3[\.\s]+|2-3[\.\s]*)?(?:하나님|God)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '2.3 하나님' ||
+          trimmed == '2.3. 하나님' ||
+          trimmed == '2.3하나님' ||
+          trimmed == '하나님') {
         detectedSec = 'god';
         isSectionHeader = true;
-      } else if (RegExp(r'^(?:2\.4[\.\s]+|2-4[\.\s]*)?(?:그리스도|예수\s*그리스도|Christ)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '2.4 그리스도' || trimmed == '2.4. 그리스도' || trimmed == '2.4그리스도' || trimmed == '그리스도') {
+      } else if (RegExp(
+            r'^(?:2\.4[\.\s]+|2-4[\.\s]*)?(?:그리스도|예수\s*그리스도|Christ)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '2.4 그리스도' ||
+          trimmed == '2.4. 그리스도' ||
+          trimmed == '2.4그리스도' ||
+          trimmed == '그리스도') {
         detectedSec = 'christ';
         isSectionHeader = true;
-      } else if (RegExp(r'^(?:2\.5[\.\s]+|2-5[\.\s]*)?(?:믿음|Faith)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '2.5 믿음' || trimmed == '2.5. 믿음' || trimmed == '2.5믿음' || trimmed == '믿음') {
+      } else if (RegExp(
+            r'^(?:2\.5[\.\s]+|2-5[\.\s]*)?(?:믿음|Faith)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '2.5 믿음' ||
+          trimmed == '2.5. 믿음' ||
+          trimmed == '2.5믿음' ||
+          trimmed == '믿음') {
         detectedSec = 'faith';
         isSectionHeader = true;
-      } else if (RegExp(r'^(?:3[\.\s]+|3\s*장[\.\s]*)?(?:결신|결단|Commitment)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '3. 결신' || trimmed == '3.결신' || trimmed == '결신' || trimmed == '결단') {
+      } else if (RegExp(
+            r'^(?:3[\.\s]+|3\s*장[\.\s]*)?(?:결신|결단|Commitment)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '3. 결신' ||
+          trimmed == '3.결신' ||
+          trimmed == '결신' ||
+          trimmed == '결단') {
         detectedSec = 'commitment';
         isSectionHeader = true;
-      } else if (RegExp(r'^(?:4[\.\s]+|4\s*장[\.\s]*)?(?:즉석\s*양육|양육|FollowUp)$', caseSensitive: false).hasMatch(trimmed) ||
-          trimmed == '4. 즉석 양육' || trimmed == '4. 즉석양육' || trimmed == '4. 양육' || trimmed == '4.양육' || trimmed == '즉석 양육' || trimmed == '양육') {
+      } else if (RegExp(
+            r'^(?:4[\.\s]+|4\s*장[\.\s]*)?(?:즉석\s*양육|양육|FollowUp)$',
+            caseSensitive: false,
+          ).hasMatch(trimmed) ||
+          trimmed == '4. 즉석 양육' ||
+          trimmed == '4. 즉석양육' ||
+          trimmed == '4. 양육' ||
+          trimmed == '4.양육' ||
+          trimmed == '즉석 양육' ||
+          trimmed == '양육') {
         detectedSec = 'follow_up';
         isSectionHeader = true;
       }
 
       if (isSectionHeader && detectedSec != null) {
         currentSecId = detectedSec;
+        detectedSections.add(detectedSec);
         continue;
       }
 
@@ -246,9 +301,14 @@ class ScriptRepository {
       }
     }
 
+    // 일반 메모나 일부 문장을 전체 대본으로 오인해 기존 데이터를 덮지 않는다.
+    if (detectedSections.length != sectionLines.length) return false;
+
     // 2. 각 섹션별 세부 스텝 매핑
     final prefs = await SharedPreferences.getInstance();
-    final customScripts = await _getCustomScriptsMap();
+    final previousScripts = json.encode(await _getCustomScriptsMap());
+    final customScripts = <String, String>{};
+    int changedStepCount = 0;
 
     for (final sec in sections) {
       final linesForSec = sectionLines[sec.id] ?? [];
@@ -264,11 +324,15 @@ class ScriptRepository {
         bool matched = false;
 
         // A) 번호 패턴 매칭 (예: "1.1", "2.1.2", "2.2.1", "3.1", "4.1" 등)
-        final numMatch = RegExp(r'^(\d+(?:\.\d+)*)[:\.\s\)\-]').firstMatch(line);
+        final numMatch = RegExp(
+          r'^(\d+(?:\.\d+)*)[:\.\s\)\-]',
+        ).firstMatch(line);
         if (numMatch != null) {
           final numStr = numMatch.group(1)!;
           final lastDigit = int.tryParse(numStr.split('.').last);
-          if (lastDigit != null && lastDigit >= 1 && lastDigit <= sec.steps.length) {
+          if (lastDigit != null &&
+              lastDigit >= 1 &&
+              lastDigit <= sec.steps.length) {
             currentStepIdx = lastDigit - 1;
             matched = true;
             final stripped = line.substring(numMatch.end).trim();
@@ -288,8 +352,11 @@ class ScriptRepository {
           if (labelPart.length <= 25 && contentPart.isNotEmpty) {
             for (int i = 0; i < sec.steps.length; i++) {
               final s = sec.steps[i];
-              final pureName = s.name.replaceAll(RegExp(r'\([^)]*\)'), '').trim();
-              if (labelPart.contains(pureName) || (s.reference != null && labelPart.contains(s.reference!))) {
+              final pureName = s.name
+                  .replaceAll(RegExp(r'\([^)]*\)'), '')
+                  .trim();
+              if (labelPart.contains(pureName) ||
+                  (s.reference != null && labelPart.contains(s.reference!))) {
                 currentStepIdx = i;
                 matched = true;
                 stepBuckets[currentStepIdx]!.add(contentPart);
@@ -312,14 +379,35 @@ class ScriptRepository {
         final content = stepBuckets[i]!.join('\n').trim();
         if (content.isNotEmpty) {
           customScripts[sec.steps[i].stepId] = content;
+          changedStepCount++;
         }
       }
     }
 
-    // 3. SharedPreferences에 커스텀 스크립트 저장 및 즉시 반영
+    if (changedStepCount < sectionLines.length) return false;
+
+    // 3. 성공 직전에 직전 상태를 백업하고 원자적으로 교체한다.
+    await prefs.setString(_importBackupKey, previousScripts);
     await prefs.setString(_customScriptsKey, json.encode(customScripts));
     _cachedSections = null;
     await loadSections();
     return true;
+  }
+
+  Future<bool> undoLastImport() async {
+    final prefs = await SharedPreferences.getInstance();
+    final backup = prefs.getString(_importBackupKey);
+    if (backup == null) return false;
+    try {
+      final decoded = json.decode(backup);
+      if (decoded is! Map<String, dynamic>) return false;
+      await prefs.setString(_customScriptsKey, backup);
+      await prefs.remove(_importBackupKey);
+      _cachedSections = null;
+      await loadSections();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

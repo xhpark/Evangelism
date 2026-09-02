@@ -6,10 +6,19 @@ void main() {
   group('QuickTriggerEngine Tests (TS-TRIG-001, TS-TRIG-003)', () {
     test('TS-TRIG-001: 문장 선두부(Lead-in text) 난이도별 3/4/5 단어 추출 검증', () {
       const sentence = "선생님 만약 가장 절친한 친구가 선생님을 위해 값비싼 시계를 선물로 주었다고 생각해 보십시오";
-      
-      final masterLeadIn = QuickTriggerEngine.extractLeadIn(sentence, difficulty: TriggerDifficulty.master);
-      final interLeadIn = QuickTriggerEngine.extractLeadIn(sentence, difficulty: TriggerDifficulty.intermediate);
-      final beginLeadIn = QuickTriggerEngine.extractLeadIn(sentence, difficulty: TriggerDifficulty.beginner);
+
+      final masterLeadIn = QuickTriggerEngine.extractLeadIn(
+        sentence,
+        difficulty: TriggerDifficulty.master,
+      );
+      final interLeadIn = QuickTriggerEngine.extractLeadIn(
+        sentence,
+        difficulty: TriggerDifficulty.intermediate,
+      );
+      final beginLeadIn = QuickTriggerEngine.extractLeadIn(
+        sentence,
+        difficulty: TriggerDifficulty.beginner,
+      );
 
       // 고급: 3단어
       expect(masterLeadIn, equals("선생님 만약 가장..."));
@@ -39,7 +48,10 @@ void main() {
         ),
       ];
 
-      final transitionDeck = QuickTriggerEngine.generateDeck(sampleSteps, onlyTransitions: true);
+      final transitionDeck = QuickTriggerEngine.generateDeck(
+        sampleSteps,
+        onlyTransitions: true,
+      );
       expect(transitionDeck.length, equals(1));
       expect(transitionDeck.first.isTransition, isTrue);
     });

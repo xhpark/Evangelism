@@ -39,20 +39,23 @@ class TransitionSentenceEngine {
       for (final step in section.steps) {
         if (!step.isTransition) continue;
 
-        final nextSection =
-            (secIdx + 1 < sections.length) ? sections[secIdx + 1] : null;
+        final nextSection = (secIdx + 1 < sections.length)
+            ? sections[secIdx + 1]
+            : null;
 
-        items.add(TransitionItem(
-          index: items.length + 1,
-          fromSection: section.title,
-          toSection: nextSection?.title ?? '완주',
-          transitionScript: step.effectiveTransitionText,
-          leadIn: _makeLeadIn(step),
-          keywords: step.transitionKeywords.isNotEmpty
-              ? step.transitionKeywords
-              : step.keywords,
-          stepId: step.stepId,
-        ));
+        items.add(
+          TransitionItem(
+            index: items.length + 1,
+            fromSection: section.title,
+            toSection: nextSection?.title ?? '완주',
+            transitionScript: step.effectiveTransitionText,
+            leadIn: _makeLeadIn(step),
+            keywords: step.transitionKeywords.isNotEmpty
+                ? step.transitionKeywords
+                : step.keywords,
+            stepId: step.stepId,
+          ),
+        );
       }
     }
 

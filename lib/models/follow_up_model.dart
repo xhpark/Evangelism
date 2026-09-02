@@ -38,7 +38,8 @@ class FollowUpData {
       questionFromPartner: "(새신자) \"아까 영접 기도를 드렸는데, 정말 저 같은 사람도 구원받은 게 맞나요?\"",
       expectedAnswerSummary: "질문 1: 방금 예수님을 믿으셨습니까?",
       expectedKeywords: ["예수님", "믿으셨습니까", "방금"],
-      fullExampleScript: "선생님, 요한복음 6장 47절에 '믿는 자는 영생을 가졌나니'라고 말씀하셨습니다. 방금 예수님을 믿으셨습니까?",
+      fullExampleScript:
+          "선생님, 요한복음 6장 47절에 '믿는 자는 영생을 가졌나니'라고 말씀하셨습니다. 방금 예수님을 믿으셨습니까?",
     ),
     DialoguePair(
       questionFromPartner: "(새신자) \"네! 진심으로 예수님을 믿고 영접했습니다.\"",
@@ -56,7 +57,8 @@ class FollowUpData {
       questionFromPartner: "(새신자) \"천국에 들어갑니다! 그런데 제가 죄를 또 지으면 어떻게 되죠?\"",
       expectedAnswerSummary: "질문 4: 천국에 들어갈 수 있는 근거와 이유는 무엇입니까?",
       expectedKeywords: ["이유", "근거", "예수님", "십자가", "하나님", "약속"],
-      fullExampleScript: "선생님이 천국에 들어가는 근거는 선생님의 행위나 느낌이 아니라, 십자가에서 모든 죄를 완불하신 예수님의 공로와 변함없는 하나님의 약속의 말씀 때문입니다!",
+      fullExampleScript:
+          "선생님이 천국에 들어가는 근거는 선생님의 행위나 느낌이 아니라, 십자가에서 모든 죄를 완불하신 예수님의 공로와 변함없는 하나님의 약속의 말씀 때문입니다!",
     ),
   ];
 
@@ -86,7 +88,8 @@ class FollowUpData {
       scriptureRef: "요한복음 4:24",
       scriptureText: "하나님은 영이시니 예배하는 자가 영과 진리로 예배할지니라",
       meaning: "하나님을 높임 (가장 높은 손가락)",
-      actionGuide: "우리를 구원하신 하나님께 감사와 찬양을 드리며, 매주일 온 성도와 함께 교회에서 신령과 진정으로 예배합니다.",
+      actionGuide:
+          "우리를 구원하신 하나님께 감사와 찬양을 드리며, 매주일 온 성도와 함께 교회에서 신령과 진정으로 예배합니다.",
     ),
     GrowthPrinciple(
       fingerIndex: 4,

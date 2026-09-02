@@ -39,7 +39,9 @@ class QuickTriggerProvider extends ChangeNotifier {
   List<Section> get sections => _sections;
   int get currentIndex => _currentIndex;
   StepItem? get currentCard =>
-      (_deck.isNotEmpty && _currentIndex < _deck.length) ? _deck[_currentIndex] : null;
+      (_deck.isNotEmpty && _currentIndex < _deck.length)
+      ? _deck[_currentIndex]
+      : null;
   TriggerDifficulty get difficulty => _difficulty;
   TriggerCardState get cardState => _cardState;
   double get remainingSeconds => _remainingSeconds;
@@ -69,7 +71,10 @@ class QuickTriggerProvider extends ChangeNotifier {
     _sections = await _repository.loadSections();
     final allSteps = _sections.expand((s) => s.steps).toList();
 
-    _deck = QuickTriggerEngine.generateDeck(allSteps, onlyTransitions: onlyTransitions);
+    _deck = QuickTriggerEngine.generateDeck(
+      allSteps,
+      onlyTransitions: onlyTransitions,
+    );
     _currentIndex = 0;
     _cardState = TriggerCardState.ready;
     _remainingSeconds = _difficulty.durationSeconds;
@@ -98,6 +103,7 @@ class QuickTriggerProvider extends ChangeNotifier {
 
   /// 순발력 테스트 & STT 음성 인식 시작
   Future<void> startTimerAndSTT() async {
+    if (_isListening || _isScoring) return;
     _timer?.cancel();
     _spokenText = '';
     _reactionTimeSeconds = 0.0;
@@ -151,7 +157,10 @@ class QuickTriggerProvider extends ChangeNotifier {
     _timer = Timer.periodic(const Duration(milliseconds: tickMs), (t) {
       currentTick++;
       _remainingSeconds =
-          (_difficulty.durationSeconds - (currentTick * tickMs / 1000)).clamp(0.0, _difficulty.durationSeconds);
+          (_difficulty.durationSeconds - (currentTick * tickMs / 1000)).clamp(
+            0.0,
+            _difficulty.durationSeconds,
+          );
 
       if (currentTick >= totalTicks) {
         _timer?.cancel();
@@ -184,12 +193,17 @@ class QuickTriggerProvider extends ChangeNotifier {
 
   /// 수음 종료 및 순발력 점수 + 정확성 점수 듀얼 채점
   Future<void> finishAndScore() async {
+    if (_isScoring ||
+        (!_isListening && _cardState == TriggerCardState.revealed)) {
+      return;
+    }
     _timer?.cancel();
     _reactionStopwatch.stop();
     _isListening = false;
     await _stt.stopListening();
 
-    if (currentCard == null) return;
+    final card = currentCard;
+    if (card == null) return;
 
     // 1. 순발력 점수 산출 (시간 내 반응 속도 기준)
     final limit = _difficulty.durationSeconds;
@@ -200,7 +214,10 @@ class QuickTriggerProvider extends ChangeNotifier {
 
     if (reaction <= limit) {
       // 제한 시간 내 발화 시작 시 70~100점
-      _speedScore = (((limit - reaction) / limit) * 30.0 + 70.0).clamp(70.0, 100.0);
+      _speedScore = (((limit - reaction) / limit) * 30.0 + 70.0).clamp(
+        70.0,
+        100.0,
+      );
     } else {
       // 제한 시간 초과 시 30~65점
       final overRatio = ((reaction - limit) / limit).clamp(0.0, 1.0);
@@ -211,28 +228,27 @@ class QuickTriggerProvider extends ChangeNotifier {
     notifyListeners();
 
     // 2. 정확성 점수 산출 (원문 대조 어절 정렬 Diff & 키워드 가중치)
-    final result = await ScoringEngine.calculateScoreAsync(
-      examId: 'trigger_${currentCard!.stepId}',
-      title: currentCard!.name,
-      originalText: currentCard!.effectiveScript,
-      spokenText: _spokenText,
-      keywords: currentCard!.keywords,
-    );
-
-    _accuracyScore = result.totalScore;
-    _evalResult = result;
-
-    // 3. 오답노트 자동 관리 (정확도 80점 미만이면 오답노트 등록)
-    if (_accuracyScore < 80.0) {
-      await _repository.addMistake(currentCard!.stepId);
-    } else {
-      await _repository.removeMistake(currentCard!.stepId);
+    try {
+      final result = await ScoringEngine.calculateScoreAsync(
+        examId: 'trigger_${card.stepId}',
+        title: card.name,
+        originalText: card.effectiveScript,
+        spokenText: _spokenText,
+        keywords: card.keywords,
+      );
+      _accuracyScore = result.totalScore;
+      _evalResult = result;
+      if (_accuracyScore < 80.0) {
+        await _repository.addMistake(card.stepId);
+      } else {
+        await _repository.removeMistake(card.stepId);
+      }
+      _mistakeIds = await _repository.getMistakeStepIds();
+      _cardState = TriggerCardState.revealed;
+    } finally {
+      _isScoring = false;
+      notifyListeners();
     }
-    _mistakeIds = await _repository.getMistakeStepIds();
-
-    _isScoring = false;
-    _cardState = TriggerCardState.revealed;
-    notifyListeners();
   }
 
   /// 다음 카드로 넘기기

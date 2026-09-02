@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:speech_to_text/speech_to_text.dart';
 
 /// 안드로이드 음성 인식기는 단말에 하나뿐이고 `speech_to_text` 패키지도 싱글턴이므로,
@@ -20,6 +21,9 @@ class STTService {
   /// 침묵으로 인식기가 스스로 멈췄을 때 자동으로 다시 수음할지 여부
   bool _keepAlive = false;
   int _autoRestartCount = 0;
+  Timer? _restartTimer;
+  bool _restartScheduled = false;
+  int _sessionGeneration = 0;
   static const int _maxAutoRestarts = 60; // 4초 침묵 기준 최대 약 10분 이상 커버
 
   // 현재 수음 세션의 소유자(탭) 콜백
@@ -54,8 +58,9 @@ class STTService {
     if (_pluginReady && _koreanLocaleId == null) {
       try {
         final locales = await _speech.locales();
-        final ko = locales.where((l) =>
-            l.localeId.toLowerCase().replaceAll('-', '_').startsWith('ko'));
+        final ko = locales.where(
+          (l) => l.localeId.toLowerCase().replaceAll('-', '_').startsWith('ko'),
+        );
         if (ko.isNotEmpty) _koreanLocaleId = ko.first.localeId;
       } catch (_) {
         _koreanLocaleId = null;
@@ -69,20 +74,36 @@ class STTService {
   void _handleEngineStopped({String? errorMsg}) {
     if (!_isListening) return;
 
-    final isFatal = errorMsg != null &&
+    final isFatal =
+        errorMsg != null &&
         (errorMsg.contains('permission') ||
             errorMsg.contains('audio') ||
             errorMsg.contains('client'));
 
     if (_keepAlive && !isFatal && _autoRestartCount < _maxAutoRestarts) {
+      if (_restartScheduled) return;
       _autoRestartCount++;
-      // 발화 중간의 침묵으로 끊긴 것이므로 지금까지의 인식 결과를 이어붙여 재개한다.
-      unawaited(_listenInternal(continueSession: true));
+      _restartScheduled = true;
+      final generation = _sessionGeneration;
+      final delay = Duration(milliseconds: min(3000, 300 * _autoRestartCount));
+      _restartTimer = Timer(delay, () async {
+        _restartScheduled = false;
+        if (!_keepAlive || !_isListening || generation != _sessionGeneration) {
+          return;
+        }
+        try {
+          await _listenInternal(continueSession: true);
+        } catch (_) {
+          _handleEngineStopped(errorMsg: 'restart_failed');
+        }
+      });
       return;
     }
 
     _isListening = false;
     _keepAlive = false;
+    _restartTimer?.cancel();
+    _restartScheduled = false;
     if (errorMsg != null) {
       _onError?.call(_toKoreanMessage(errorMsg));
     }
@@ -143,13 +164,17 @@ class STTService {
     if (!ready) {
       _isListening = false;
       _onError?.call(
-          '이 기기에서 음성 인식을 사용할 수 없습니다. 마이크 권한과 구글 음성 인식 설치 상태를 확인해 주세요.');
+        '이 기기에서 음성 인식을 사용할 수 없습니다. 마이크 권한과 구글 음성 인식 설치 상태를 확인해 주세요.',
+      );
       return false;
     }
 
     _recognizedText = '';
     _previousBuffer = '';
     _autoRestartCount = 0;
+    _sessionGeneration++;
+    _restartTimer?.cancel();
+    _restartScheduled = false;
     _keepAlive = keepAlive;
     _isListening = true;
 
@@ -169,6 +194,9 @@ class STTService {
     if (!_isListening) return;
     _keepAlive = false;
     _isListening = false;
+    _sessionGeneration++;
+    _restartTimer?.cancel();
+    _restartScheduled = false;
     try {
       await _speech.stop();
     } catch (_) {}
@@ -179,6 +207,9 @@ class STTService {
   Future<void> cancel() async {
     _keepAlive = false;
     _isListening = false;
+    _sessionGeneration++;
+    _restartTimer?.cancel();
+    _restartScheduled = false;
     _recognizedText = '';
     _previousBuffer = '';
     try {

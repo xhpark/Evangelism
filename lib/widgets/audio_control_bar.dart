@@ -59,15 +59,15 @@ class AudioControlBar extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? (s == 2.5
-                                        ? AppTheme.accentGold
-                                        : AppTheme.primaryBlue)
+                                          ? AppTheme.accentGold
+                                          : AppTheme.primaryBlue)
                                     : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isSelected
                                       ? (s == 2.5
-                                          ? AppTheme.accentGold
-                                          : AppTheme.primaryBlue)
+                                            ? AppTheme.accentGold
+                                            : AppTheme.primaryBlue)
                                       : const Color(0xFFCBD5E1),
                                   width: 1.0,
                                 ),
@@ -108,7 +108,11 @@ class AudioControlBar extends StatelessWidget {
                       value: PlayMode.sectionRepeat,
                       child: Row(
                         children: [
-                          Icon(Icons.repeat, size: 18, color: AppTheme.primaryBlue),
+                          Icon(
+                            Icons.repeat,
+                            size: 18,
+                            color: AppTheme.primaryBlue,
+                          ),
                           SizedBox(width: 8),
                           Text("현재 챕터 무한 반복 (추천)"),
                         ],
@@ -146,7 +150,10 @@ class AudioControlBar extends StatelessWidget {
                     ),
                   ],
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
@@ -159,10 +166,10 @@ class AudioControlBar extends StatelessWidget {
                           study.playMode == PlayMode.singleRepeat
                               ? Icons.repeat_one
                               : study.playMode == PlayMode.sectionRepeat
-                                  ? Icons.repeat
-                                  : study.playMode == PlayMode.allSequentialPlay
-                                      ? Icons.all_inclusive
-                                      : Icons.playlist_play,
+                              ? Icons.repeat
+                              : study.playMode == PlayMode.allSequentialPlay
+                              ? Icons.all_inclusive
+                              : Icons.playlist_play,
                           size: 16,
                           color: AppTheme.primaryBlue,
                         ),
@@ -171,11 +178,14 @@ class AudioControlBar extends StatelessWidget {
                           study.playMode == PlayMode.singleRepeat
                               ? "1문장 반복"
                               : study.playMode == PlayMode.sectionRepeat
-                                  ? "챕터 무한반복"
-                                  : study.playMode == PlayMode.allSequentialPlay
-                                      ? "전체 완주"
-                                      : "챕터 1회",
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              ? "챕터 무한반복"
+                              : study.playMode == PlayMode.allSequentialPlay
+                              ? "전체 완주"
+                              : "챕터 1회",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const Icon(Icons.arrow_drop_down, size: 16),
                       ],
@@ -193,9 +203,13 @@ class AudioControlBar extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        study.isPlaying ? AppTheme.accentRed : AppTheme.primaryBlue,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                    backgroundColor: study.isPlaying
+                        ? AppTheme.accentRed
+                        : AppTheme.primaryBlue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 10,
+                    ),
                   ),
                   icon: Icon(
                     study.isPlaying ? Icons.stop : Icons.play_arrow,
@@ -213,7 +227,9 @@ class AudioControlBar extends StatelessWidget {
                   onPressed: () => study.toggleBlindMode(),
                   icon: Icon(
                     study.blindMode ? Icons.visibility_off : Icons.visibility,
-                    color: study.blindMode ? AppTheme.accentGold : AppTheme.textMuted,
+                    color: study.blindMode
+                        ? AppTheme.accentGold
+                        : AppTheme.textMuted,
                   ),
                 ),
               ],

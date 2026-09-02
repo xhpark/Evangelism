@@ -56,17 +56,19 @@ void main() {
       final repo = ScriptRepository();
 
       for (var i = 0; i < 55; i++) {
-        await repo.saveExamResult(ExamResult(
-          examId: 'exam_$i',
-          title: '테스트 $i',
-          timestamp: DateTime.now(),
-          totalScore: 90.0,
-          charAccuracy: 90.0,
-          keywordAccuracy: 90.0,
-          originalText: '영생은 값없이 주시는 하나님의 선물입니다',
-          spokenText: '영생은 값없이 주시는 하나님의 선물입니다',
-          diffTokens: const [],
-        ));
+        await repo.saveExamResult(
+          ExamResult(
+            examId: 'exam_$i',
+            title: '테스트 $i',
+            timestamp: DateTime.now(),
+            totalScore: 90.0,
+            charAccuracy: 90.0,
+            keywordAccuracy: 90.0,
+            originalText: '영생은 값없이 주시는 하나님의 선물입니다',
+            spokenText: '영생은 값없이 주시는 하나님의 선물입니다',
+            diffTokens: const [],
+          ),
+        );
       }
 
       final history = await repo.getExamHistory();

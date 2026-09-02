@@ -153,7 +153,9 @@ class StudyProvider extends ChangeNotifier {
         if (curStep != null) {
           playStep(
             curStep,
-            initialText: (remaining.isNotEmpty && remaining.length > 1) ? remaining : null,
+            initialText: (remaining.isNotEmpty && remaining.length > 1)
+                ? remaining
+                : null,
           );
         }
       }
@@ -207,11 +209,15 @@ class StudyProvider extends ChangeNotifier {
         _activeStepId = curStep.stepId;
         notifyListeners();
 
-        final text = (isFirst && initialText != null) ? initialText : curStep.effectiveScript;
+        final text = (isFirst && initialText != null)
+            ? initialText
+            : curStep.effectiveScript;
         isFirst = false;
 
         await _ttsService.speak(text, stepId: curStep.stepId);
-        if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+        if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+          break;
+        }
         await Future.delayed(const Duration(milliseconds: 200));
       }
     }
@@ -225,7 +231,9 @@ class StudyProvider extends ChangeNotifier {
           _playbackSessionId == currentSession &&
           _playMode == PlayMode.sectionRepeat) {
         for (var i = currentStartIndex; i < steps.length; i++) {
-          if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+          if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+            break;
+          }
           final s = steps[i];
           _activeStepId = s.stepId;
           notifyListeners();
@@ -235,7 +243,9 @@ class StudyProvider extends ChangeNotifier {
               : s.effectiveScript;
 
           await _ttsService.speak(text, stepId: s.stepId);
-          if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+          if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+            break;
+          }
           await Future.delayed(const Duration(milliseconds: 200));
         }
         currentStartIndex = 0;
@@ -246,14 +256,20 @@ class StudyProvider extends ChangeNotifier {
     else if (_playMode == PlayMode.sectionPlay) {
       final steps = currentSection?.steps ?? [];
       for (var i = fromIndex; i < steps.length; i++) {
-        if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+        if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+          break;
+        }
         final s = steps[i];
         _activeStepId = s.stepId;
         notifyListeners();
 
-        final text = (i == fromIndex && initialText != null) ? initialText : s.effectiveScript;
+        final text = (i == fromIndex && initialText != null)
+            ? initialText
+            : s.effectiveScript;
         await _ttsService.speak(text, stepId: s.stepId);
-        if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+        if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+          break;
+        }
         await Future.delayed(const Duration(milliseconds: 200));
       }
     }
@@ -264,8 +280,14 @@ class StudyProvider extends ChangeNotifier {
       //  모든 챕터가 fromIndex부터 시작해 앞 문장들이 통째로 건너뛰던 문제를 수정)
       final startSectionIndex = _selectedSectionIndex;
 
-      for (var secIdx = startSectionIndex; secIdx < _sections.length; secIdx++) {
-        if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+      for (
+        var secIdx = startSectionIndex;
+        secIdx < _sections.length;
+        secIdx++
+      ) {
+        if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+          break;
+        }
         _selectedSectionIndex = secIdx;
         notifyListeners();
 
@@ -274,17 +296,22 @@ class StudyProvider extends ChangeNotifier {
         final startIdx = isStartSection ? fromIndex.clamp(0, steps.length) : 0;
 
         for (var stepIdx = startIdx; stepIdx < steps.length; stepIdx++) {
-          if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+          if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+            break;
+          }
           final s = steps[stepIdx];
           _activeStepId = s.stepId;
           notifyListeners();
 
-          final text = (isStartSection && stepIdx == startIdx && initialText != null)
+          final text =
+              (isStartSection && stepIdx == startIdx && initialText != null)
               ? initialText
               : s.effectiveScript;
 
           await _ttsService.speak(text, stepId: s.stepId);
-          if (!_isContinuousPlaying || _playbackSessionId != currentSession) break;
+          if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
+            break;
+          }
           await Future.delayed(const Duration(milliseconds: 200));
         }
       }

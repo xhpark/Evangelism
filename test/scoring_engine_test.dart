@@ -19,7 +19,10 @@ void main() {
 
       expect(result.totalScore, equals(100.0));
       expect(result.isPassed, isTrue);
-      expect(result.diffTokens.every((t) => t.type == DiffType.matched), isTrue);
+      expect(
+        result.diffTokens.every((t) => t.type == DiffType.matched),
+        isTrue,
+      );
     });
 
     test('TS-SCORE-002: 핵심 키워드 누락 시 가중치 감점 및 Missing 토큰 마킹', () {
@@ -38,7 +41,12 @@ void main() {
       expect(result.totalScore, lessThan(95.0));
       expect(result.totalScore, greaterThan(55.0));
       // '돈이나' 누락 마킹 확인
-      expect(result.diffTokens.any((t) => t.type == DiffType.missing && t.text.contains("돈")), isTrue);
+      expect(
+        result.diffTokens.any(
+          (t) => t.type == DiffType.missing && t.text.contains("돈"),
+        ),
+        isTrue,
+      );
     });
 
     test('TS-SCORE-003: 빈 문자열 발화 시 0점 및 전체 Missing 처리', () {
@@ -54,7 +62,10 @@ void main() {
 
       expect(result.totalScore, equals(0.0));
       expect(result.isPassed, isFalse);
-      expect(result.diffTokens.every((t) => t.type == DiffType.missing), isTrue);
+      expect(
+        result.diffTokens.every((t) => t.type == DiffType.missing),
+        isTrue,
+      );
     });
   });
 }

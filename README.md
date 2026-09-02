@@ -2,8 +2,8 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.44.0-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.12.0-0175C2?logo=dart)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/Tests-42%20Passed-brightgreen)](docs/02_module_test_specs.md)
-[![License](https://img.shields.io/badge/Security-KillSwitch%20%2B%20PIN%20Active-success)](README.md)
+[![Tests](https://img.shields.io/badge/Tests-48%20Passed-brightgreen)](docs/02_module_test_specs.md)
+[![License](https://img.shields.io/badge/Security-One--time%20Code%20%2B%20Device%20Token-success)](README.md)
 
 전도폭발(EE International) 복음 제시 전문(1~8대 대지 40개 문장)의 **완벽한 암송과 실전 1:1 구두 훈련 역량 강화**를 위해 설계된 지능형 모바일 트레이닝 시스템입니다.
 
@@ -11,12 +11,18 @@
 
 ## 🛡️ 모바일 보안 및 비인가 복제 방지 시스템 (1, 2, 4 방안 탑재)
 
-1. **원격 킬 스위치 (Remote Kill-Switch)**: 개발자의 구글 시트 관리 목록에서 `BLOCKED`로 전환 시 비인가 단말기 즉시 전면 차단. 앱 실행 시와 포그라운드 복귀 시마다 재확인하며, 사용 중 차단되면 즉시 차단 화면으로 전환됩니다.
-2. **마스터 인증키 (Activation PIN 게이트)**: 최초 설치 시 훈련생 성명·소속 교회와 함께 개발자 발급 마스터 인증키 입력 필수. (인증키 실제 값은 소스 코드와 개발자만 보유하며, 문서에는 공개하지 않습니다.)
-3. **신규 기기 실시간 텔레메트리 통보**: 새 기기 활성화 시 개발자 이메일(`xhpark@naver.com`)로 기기 정보 자동 전송.
-4. **요청 서명 및 서버측 인증키 재검증**: 앱과 백엔드가 공유 시크릿 기반 SHA-256 서명을 주고받아 무단 호출을 차단하고, 인증키를 서버에서 한 번 더 검증합니다.
-5. **백업 복제 차단**: 안드로이드 자동 백업 및 기기 간 전송에서 라이선스 데이터를 제외해 다른 단말로 복제되지 않습니다.
-6. **개발자 전용 설정 보호**: 구글 시트 연동 주소 변경은 마스터 인증키를 다시 입력해야만 가능합니다.
+1. **일회용 활성화 코드**: 관리자가 private 시트에서 발급한 코드는 서버에서 한 번만 사용할 수 있으며 앱에는 저장되지 않습니다.
+2. **기기 토큰**: 서버가 발급한 기기별 토큰은 Android 보안 저장소에 보관되고 서버에는 SHA-256 해시만 남습니다.
+3. **원격 킬 스위치**: 앱 시작·포그라운드 복귀·사용 중 5분 주기로 승인 상태를 확인하고 `BLOCKED`이면 즉시 차단합니다.
+4. **빌드 고정 서버 주소**: Google Apps Script URL은 `LICENSE_API_URL` 빌드 설정으로만 주입하며 사용자가 앱에서 변경할 수 없습니다.
+5. **백업 복제 차단**: Android 자동 백업 및 기기 간 전송에서 라이선스 데이터를 제외합니다.
+6. **개인정보 구분 고지**: 활성화용 기기 정보의 서버 전송과 간증·대본·음성 결과의 기기 내 저장 범위를 별도 필수 동의로 안내합니다.
+
+### 테스트 사용자에게 배포할 때
+
+* 공유 대상은 실제 서버 주소를 주입해 빌드하고 정식 키로 서명한 `app-release.apk`의 다운로드 링크뿐입니다. Apps Script `/exec` 주소와 관리 스프레드시트는 공유하지 않습니다.
+* private `activation_codes` 시트에서 각 사용자에게 서로 다른 `UNUSED` 코드를 1개씩 전달합니다. 한 코드는 먼저 성공한 한 기기에만 귀속되고 즉시 `USED`가 됩니다.
+* `createActivationCodes(count)`는 한 번에 1~100개를 만들 수 있습니다. Apps Script 편집기의 실행 버튼은 인수를 전달하지 않으므로 함수를 그대로 실행하면 기본값인 1개가 생성됩니다.
 
 ---
 
@@ -48,7 +54,7 @@
    * 기기 고유 코드(Device UUID) 확인 및 원격 승인 동기화.
    * 순수 한국어 TTS 보이스 선별 목록에서 목소리(Voice) 선택.
    * 음높이(Tone/Pitch) 슬라이더 및 3대 원터치 톤 프리셋(차분한 저음 / 표준 톤 / 밝은 고음).
-   * 8대 챕터별 문장 개별 수정 및 TXT 전문 일괄 임포트/반영.
+   * 8대 챕터별 문장 개별 수정 및 구조 검증 TXT 전문 가져오기·직전 가져오기 취소.
    * 개인 간증(서론 1.2) 및 소속 교회명 맞춤 저장.
 
 ---
@@ -57,11 +63,13 @@
 
 * **[📖 쉬운 앱 사용 설명서](docs/04_user_guide.md)**: 단계별 사용법 및 FAQ
 * **[📐 시스템 상세 설계서 v2.1](docs/01_detailed_design.md)**: 보안 시스템, 아키텍처, 8대 챕터 매핑
-* **[🧪 단위 및 모듈 테스트 명세서](docs/02_module_test_specs.md)**: 33개 단위/위젯 테스트 시나리오 및 통과 내역
+* **[🧪 단위 및 모듈 테스트 명세서](docs/02_module_test_specs.md)**: 48개 단위/위젯 테스트 통과 내역
 * **[📋 통합 테스트 및 실기기 검증 계획서](docs/03_integration_test_plan.md)**: Galaxy S24 Ultra E2E 검증
 * **[⚙️ 구글 앱스 스크립트 백엔드 코드](scripts/google_apps_script_backend.js)**: 구글 시트 배포용 소스
 * **[🤝 AI 협업 인수인계 기록](docs/05_ai_handoff_log.md)**: 코드 현황·문서 동기화 이력 (Antigravity 등 타 AI 에이전트용)
 * **[🤖 AI 에이전트 작업 규칙](AGENTS.md)**: 저장소 공통 규칙 및 금지 사항
+
+자동 검증은 Flutter 테스트 48개, Apps Script 백엔드 통합 테스트 12개 그룹, 라인 커버리지 45% 하한, debug/release APK 빌드와 APK 서명 확인까지 포함합니다. 앱 버전은 `1.0.1+2`입니다. 2026-09-02 Galaxy S24 Ultra에서 새 서버 health 표식, 실제 일회용 코드 승인·소진, 동일 코드 재사용 거부, 포그라운드 복귀 후 토큰 승인과 최근 접속 갱신까지 확인했습니다. 강제 종료 후 재진입, 원격 차단, TTS/STT 항목은 통합 테스트 계획서의 남은 경계를 따릅니다.
 
 ---
 

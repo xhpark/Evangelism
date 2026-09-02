@@ -1,10 +1,10 @@
 # 전도폭발 JUST EE 단위 및 모듈 테스트 명세서 (Module Test Specifications)
 
-**문서 버전:** v2.3  
-**작성일:** 2026-08-29  
+**문서 버전:** v2.5
+**작성일:** 2026-09-02
 **테스트 프레임워크:** Flutter Test (`flutter test`)  
-**테스트 스위트 구성:** 총 14개 파일, 42개 단위/위젯 테스트 (100% 통과)  
-**최종 실행 결과:** 2026-08-29 `flutter test` → `+42: All tests passed!` / `flutter analyze` → `No issues found!` / `flutter build apk --debug` → 성공
+**테스트 스위트 구성:** 총 14개 파일, 48개 단위/위젯 테스트 (100% 통과)
+**최종 실행 결과:** 2026-09-02 앱 `1.0.1+2` / `flutter test --coverage` → `+48: All tests passed!` / 라인 커버리지 47.0% / `flutter analyze` → `No issues found!` / release APK 빌드·서명·실기기 설치 성공
 
 ---
 
@@ -12,12 +12,14 @@
 
 | 테스트 파일 | 테스트 ID | 검증 대상 모듈 | 테스트 시나리오 및 검증 내용 | 결과 |
 | :--- | :--- | :--- | :--- | :---: |
-| `license_service_test.dart` | TS-LIC-001 | `LicenseService` | 기기 고유 UUID 발급 및 SharedPreferences 영구 보관 검증 | PASS |
-| | TS-LIC-002 | `LicenseService` | 올바른 마스터 PIN 입력 시 활성화 및 상태 변경 검증 (방안 2) | PASS |
-| | TS-LIC-003 | `LicenseService` | 잘못된 PIN 입력 시 활성화 거부 검증 | PASS |
-| | TS-LIC-004 | `LicenseService` | 원격 킬스위치 차단 시 Blocked 상태 전환 검증 (방안 1) | PASS |
-| | TS-LIC-005 | `LicenseActivationScreen` | UI 렌더링, 기기 코드 복사 및 PIN 입력 필드 검증 | PASS |
-| | TS-LIC-006 | `BlockedScreen` | 비인가 단말기 접근 차단 화면 및 사유 렌더링 검증 | PASS |
+| `license_service_test.dart` | TS-LIC-001 | `LicenseService` | 4그룹 기기 코드 발급 및 재초기화 시 영구 보관 검증 | PASS |
+| | TS-LIC-007 | `LicenseService` | 구형 3그룹 기기 코드를 다른 사용자 데이터 삭제 없이 4그룹으로 1회 확장 | PASS |
+| | TS-LIC-002 | `LicenseService` | 서버 `APPROVED`와 기기 토큰이 모두 있어야 활성화되는지 검증 | PASS |
+| | TS-LIC-003 | `LicenseService` | 서버가 거부한 일회용 코드는 로컬 활성화되지 않는지 검증 | PASS |
+| | TS-LIC-008 | `LicenseService` | 서버 `ERROR`를 코드 무효·재사용 메시지로 오표시하지 않는지 검증 | PASS |
+| | TS-LIC-004 | `LicenseService` | 서버에서 차단 해제 시 기존 토큰으로 정상 활성화 복구 검증 | PASS |
+| | TS-LIC-005 | `LicenseActivationScreen` | 일회용 코드 입력 UI 렌더링 검증 | PASS |
+| | TS-LIC-006 | `BlockedScreen` | 원격 차단 사유 렌더링 검증 | PASS |
 | `korean_text_normalizer_test.dart` | TS-NORM-001 | `KoreanTextNormalizer` | 추임새 및 간투사("어...", "음...") 자동 필터링 | PASS |
 | | TS-NORM-002 | `KoreanTextNormalizer` | 성경 장/절 및 한글 수사 ➔ 아라비아 숫자 통일 변환 | PASS |
 | | TS-NORM-003 | `KoreanTextNormalizer` | 특수문자 및 다중 공백 제거 정제 검증 | PASS |
@@ -34,6 +36,8 @@
 | | TS-SCORE-003 | `ScoringEngine` | 빈 문자열 발화 시 0점 및 전체 Missing 처리 | PASS |
 | `script_edit_propagation_test.dart` | TS-EDIT-001 | `ScriptManageProvider` | 문장 개별 수정 시 StudyProvider 및 채점 엔진 즉시 반영 | PASS |
 | `script_import_test.dart` | TS-IMPO-001 | `ScriptRepository` | 외부 TXT 전문 파싱 및 8대 섹션 자동 분류 검증 | PASS |
+| | TS-IMPO-002 | `ScriptRepository` | 구조 없는 텍스트 거부 및 기존 대본 보존 검증 | PASS |
+| | TS-IMPO-003 | `ScriptRepository` | 직전 가져오기 백업 복원 및 1회성 되돌리기 검증 | PASS |
 | `transition_engine_test.dart` | TS-TRANS-001 | `TransitionSentenceEngine` | 교재 데이터 기반 6대 전환문장 생성 및 대지 순서 검증 | PASS |
 | | TS-TRANS-002 | `TransitionSentenceEngine` | 전환문장이 실제 교재 대본 안에 포함되어 있는지 검증 (목록·대본 불일치 방지) | PASS |
 | `tts_syllable_test.dart` | TS-TTS-001 | `TTSService` | 발화 시작 초기(0.5초 이내) 문장 전체 반환 (건너뜀 방지) | PASS |
@@ -41,19 +45,21 @@
 | | TS-TTS-003 | `TTSService` | 긴 문장에서 3.0초 경과 시 단어 건너뜀 방지 어절 유지 | PASS |
 | | TS-TTS-004 | `TTSService` | 2.0배속 고속 발화 시에도 안전하게 이전 어절 포함 | PASS |
 | `user_custom_script_import_test.dart` | TS-CUST-001 | `ScriptRepository` | 사용자 전도폭발 전문 텍스트 파싱 및 8대 대지 매핑 | PASS |
-| `security_regression_test.dart` | TS-SEC-001 | `LicenseService` | "JUST" 접두 임의 문자열 5종이 모두 활성화 거부되는지 검증 (우회 회귀 방지) | PASS |
-| | TS-SEC-002 | `LicenseService` | 발급된 마스터 인증키만 통과, 하이픈·대소문자 무관 대조 검증 | PASS |
-| | TS-SEC-003 | `LicenseService` | 기기 고유 코드 `EE-XXXX-XXXX-XXXX` 형식 발급 검증 | PASS |
+| `security_regression_test.dart` | TS-SEC-001 | `LicenseService` | 코드 형태나 접두사만으로는 활성화되지 않고 매번 서버 승인이 필요한지 검증 | PASS |
+| | TS-SEC-002 | `LicenseService` | 승인 상태 확인 요청에 보안 저장소의 기기 토큰을 쓰는지 검증 | PASS |
+| | TS-SEC-003 | `LicenseService` | 토큰 거부 시 로컬 승인과 토큰을 삭제하는지 검증 | PASS |
+| | TS-SEC-004 | `LicenseService` | 허용된 Apps Script HTTPS 주소 외에는 통신하지 않는지 검증 | PASS |
 | `scoring_rules_test.dart` | TS-SCORE-004 | `ScoringEngine` | 조사·어미 차이는 정답, 다른 단어는 오답으로 판정하는 어간 규칙 검증 | PASS |
 | | TS-SCORE-005 | `ScoringEngine` | 정확한 발화 100점 / 전혀 다른 발화 30점 미만 산출 검증 | PASS |
 | | TS-NORM-004 | `KoreanTextNormalizer` | 지시어·감탄사(그/이/아) 보존 및 실제 추임새만 제거 검증 | PASS |
 | | TS-NORM-005 | `KoreanTextNormalizer` | 장/절 수사만 숫자 변환하고 "사장님"·"일절"은 보존하는지 검증 | PASS |
 | | TS-SCORE-006 | `ScoringEngine` | 전체 완주 분량(800자 초과) 지문의 아이솔레이트 비동기 채점 동작 검증 | PASS |
+| | TS-SCORE-007 | `ScoringEngine` | 반복 단어를 실제 발화 횟수만큼만 순서대로 일치 처리하는지 검증 | PASS |
 | `playback_sequence_test.dart` | TS-PLAY-001 | `StudyProvider` | 전체 완주 재생 시 시작 챕터만 중간부터, 이후 챕터는 첫 문장부터 재생 검증 | PASS |
 | | TS-PLAY-002 | `ScriptRepository` | 교재 전문 8개 챕터 40문장 구성 검증 | PASS |
 | | TS-HIST-001 | `ScriptRepository` | 시험 이력 최대 50건 상한 및 최신순 정렬 검증 | PASS |
 | `widget_test.dart` | TS-WIDG-001 | `MainNavigationScreen` | BottomNavigationBar 5개 탭 렌더링 확인 | PASS |
-| | TS-WIDG-002 | `WelcomeTermsScreen` | 저작권 고지, 개발자 정보 및 동의 체크박스 게이트 검증 | PASS |
+| | TS-WIDG-002 | `WelcomeTermsScreen` | 저작권 및 개인정보 별도 필수 동의 게이트 검증 | PASS |
 
 ---
 
@@ -71,6 +77,21 @@
 ## 3. 테스트 실행 명령어
 
 ```bash
-flutter test      # 30개 단위/위젯 테스트
+flutter test --coverage  # 48개 단위/위젯 테스트
 flutter analyze   # 정적 분석 (경고 0건 유지)
+node scripts/google_apps_script_backend.test.js  # 서버 통합 테스트
+dart run scripts/check_coverage.dart coverage/lcov.info 45  # 커버리지 하한
 ```
+
+### Apps Script 백엔드 통합 검증
+
+`google_apps_script_backend.test.js`는 메모리 시트와 Apps Script 런타임 API를 사용해 다음 경계를 실제 서버 코드로 검증합니다.
+
+* health 응답의 `protocol=device_token_v2` 표식
+* 유효하지 않은 기기는 코드를 소진하지 않음
+* 일회용 코드의 대소문자·구분자 정규화, 최초 승인 및 재사용 거부
+* 토큰 원문 대신 SHA-256 해시 저장
+* 정상 토큰 승인, 잘못된 토큰 거부, 원격 차단과 해제
+* 스프레드시트 수식 주입 차단 및 예외 원문 비노출
+
+CI는 라인 커버리지 **45% 하한**도 강제합니다. 현재 실측은 **47.0%**이며, 100% 하한을 넣은 음성 테스트에서 종료 코드 1로 실제 차단되는 것도 확인했습니다.

@@ -49,9 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final study = context.read<StudyProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("⚙️ 대본 보기 및 수정 설정"),
-      ),
+      appBar: AppBar(title: const Text("⚙️ 대본 보기 및 수정 설정")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -68,7 +66,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.info_outline, color: AppTheme.primaryBlue, size: 22),
+                  Icon(
+                    Icons.info_outline,
+                    color: AppTheme.primaryBlue,
+                    size: 22,
+                  ),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -97,7 +99,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : (voices.isNotEmpty ? voices.first.name : null);
 
                 return Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -105,12 +109,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.record_voice_over, color: AppTheme.primaryBlue),
+                            Icon(
+                              Icons.record_voice_over,
+                              color: AppTheme.primaryBlue,
+                            ),
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 "🎙️ TTS 음성 목소리(Voice) & 톤 설정",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -118,7 +128,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 6),
                         const Text(
                           "스마트폰에 설치된 다양한 남성/여성 한국어 보이스 중 마음에 드는 목소리와 음높이를 선택하세요.",
-                          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textMuted,
+                          ),
                         ),
                         const SizedBox(height: 14),
 
@@ -128,24 +141,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             const Text(
                               "한국어 목소리 종류",
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.blue.shade50,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 "선택 가능: ${voices.length}개",
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryBlue,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey.shade300),
                             borderRadius: BorderRadius.circular(8),
@@ -161,13 +187,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   value: v.name,
                                   child: Text(
                                     v.displayName,
-                                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500),
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 );
                               }).toList(),
                               onChanged: (val) async {
                                 if (val == null) return;
-                                final target = voices.firstWhere((v) => v.name == val);
+                                final target = voices.firstWhere(
+                                  (v) => v.name == val,
+                                );
                                 await study.setTtsVoice(target);
                               },
                             ),
@@ -181,15 +212,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             const Text(
                               "음높이 (톤 조절)",
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Text(
                               study.pitch <= 0.85
                                   ? "차분한 저음 (${study.pitch.toStringAsFixed(2)})"
                                   : study.pitch >= 1.15
-                                      ? "밝은 고음 (${study.pitch.toStringAsFixed(2)})"
-                                      : "표준 톤 (${study.pitch.toStringAsFixed(2)})",
-                              style: const TextStyle(fontSize: 12, color: AppTheme.primaryBlue, fontWeight: FontWeight.bold),
+                                  ? "밝은 고음 (${study.pitch.toStringAsFixed(2)})"
+                                  : "표준 톤 (${study.pitch.toStringAsFixed(2)})",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.primaryBlue,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -240,8 +278,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryBlue,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 9,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               onPressed: () => study.previewTtsVoice(),
                               icon: const Icon(Icons.volume_up, size: 18),
@@ -260,12 +303,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: const Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.tips_and_updates, color: Color(0xFFB45309), size: 18),
+                              Icon(
+                                Icons.tips_and_updates,
+                                color: Color(0xFFB45309),
+                                size: 18,
+                              ),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   "💡 더욱 자연스러운 사람 목소리를 원하시면 스마트폰 [설정 ➔ 일반 ➔ 글자 읽어주기(TTS) ➔ 기본 엔진(Google/삼성) 설정 ➔ 음성 데이터 설치]에서 '고음질 보이스'를 다운로드하시면 감탄할 만큼 부드러운 목소리로 들으실 수 있습니다.",
-                                  style: TextStyle(fontSize: 11.5, height: 1.4, color: Color(0xFF78350F)),
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    height: 1.4,
+                                    color: Color(0xFF78350F),
+                                  ),
                                 ),
                               ),
                             ],
@@ -288,12 +339,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.format_list_bulleted, color: AppTheme.primaryBlue),
+                        Icon(
+                          Icons.format_list_bulleted,
+                          color: AppTheme.primaryBlue,
+                        ),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             "📖 8대 챕터별 대본 보기 및 개별 수정",
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -332,21 +389,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               subtitle: Text(
                                 "총 ${sec.steps.length}개 문장",
-                                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.textMuted,
+                                ),
                               ),
                               children: sec.steps.map((step) {
                                 return Container(
-                                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    8,
+                                    16,
+                                    12,
+                                  ),
                                   decoration: BoxDecoration(
                                     border: Border(
-                                      top: BorderSide(color: Colors.grey.shade200),
+                                      top: BorderSide(
+                                        color: Colors.grey.shade200,
+                                      ),
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Text(
@@ -365,12 +434,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               size: 22,
                                             ),
                                             tooltip: "이 문장 수정",
-                                            onPressed: () => _showStepEditDialog(
-                                              context,
-                                              step,
-                                              provider,
-                                              study,
-                                            ),
+                                            onPressed: () =>
+                                                _showStepEditDialog(
+                                                  context,
+                                                  step,
+                                                  provider,
+                                                  study,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -406,12 +476,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.file_upload_outlined, color: AppTheme.primaryBlue),
+                        Icon(
+                          Icons.file_upload_outlined,
+                          color: AppTheme.primaryBlue,
+                        ),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             "📋 전체 대본 TXT 붙여넣기 및 일괄 반영",
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -445,13 +521,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             for (final sec in provider.sections) {
                               buffer.writeln(sec.title);
                               for (final st in sec.steps) {
-                                buffer.writeln("${st.name}: ${st.effectiveScript}");
+                                buffer.writeln(
+                                  "${st.name}: ${st.effectiveScript}",
+                                );
                               }
                               buffer.writeln();
                             }
                             _importController.text = buffer.toString().trim();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("현재 대본 전체를 편집기에 불러왔습니다.")),
+                              const SnackBar(
+                                content: Text("현재 대본 전체를 편집기에 불러왔습니다."),
+                              ),
                             );
                           },
                           icon: const Icon(Icons.copy_all, size: 16),
@@ -463,19 +543,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             if (text.isEmpty) return;
                             final ok = await provider.importText(text);
                             if (!context.mounted) return;
-                            await _propagateScriptChange(context);
+                            if (ok) await _propagateScriptChange(context);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(ok
-                                      ? "대본 전체가 성공적으로 반영되어 저장되었습니다."
-                                      : "텍스트 형식을 확인해 주세요."),
+                                  content: Text(
+                                    ok
+                                        ? "대본 전체가 성공적으로 반영되어 저장되었습니다."
+                                        : "텍스트 형식을 확인해 주세요.",
+                                  ),
                                 ),
                               );
                             }
                           },
                           icon: const Icon(Icons.download, size: 16),
                           label: const Text("텍스트 적용 및 저장"),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            final ok = await provider.undoLastImport();
+                            if (!context.mounted) return;
+                            if (ok) await _propagateScriptChange(context);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  ok
+                                      ? "직전 대본 가져오기를 되돌렸습니다."
+                                      : "되돌릴 가져오기 기록이 없습니다.",
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.undo, size: 16),
+                          label: const Text("직전 가져오기 취소"),
                         ),
                       ],
                     ),
@@ -499,7 +600,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Expanded(
                           child: Text(
                             "나의 개인 간증 (서론 1.2)",
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -520,7 +624,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
                         onPressed: () async {
-                          await provider.saveTestimony(_testimonyController.text.trim());
+                          await provider.saveTestimony(
+                            _testimonyController.text.trim(),
+                          );
                           if (!context.mounted) return;
                           await _propagateScriptChange(context);
                           if (context.mounted) {
@@ -530,6 +636,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           }
                         },
                         child: const Text("간증 저장"),
+                      ),
+                    ),
+                    const Divider(height: 28),
+                    TextField(
+                      controller: _churchController,
+                      maxLength: 80,
+                      decoration: const InputDecoration(
+                        labelText: "소속 교회명",
+                        helperText: "대본의 [교회 이름] 표시에 적용됩니다.",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await provider.saveChurch(
+                            _churchController.text.trim(),
+                          );
+                          if (!context.mounted) return;
+                          await _propagateScriptChange(context);
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("교회명이 저장되어 대본에 반영되었습니다."),
+                            ),
+                          );
+                        },
+                        child: const Text("교회명 저장"),
                       ),
                     ),
                   ],
@@ -554,20 +689,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.security, color: AppTheme.primaryBlue),
+                            const Icon(
+                              Icons.security,
+                              color: AppTheme.primaryBlue,
+                            ),
                             const SizedBox(width: 8),
                             const Expanded(
                               child: Text(
                                 "기기 라이선스 및 보안 관리",
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryNavy),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryNavy,
+                                ),
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: license.isActivated
-                                    ? AppTheme.accentEmerald.withValues(alpha: 0.12)
-                                    : AppTheme.accentRed.withValues(alpha: 0.12),
+                                    ? AppTheme.accentEmerald.withValues(
+                                        alpha: 0.12,
+                                      )
+                                    : AppTheme.accentRed.withValues(
+                                        alpha: 0.12,
+                                      ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -575,7 +724,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: license.isActivated ? AppTheme.accentEmerald : AppTheme.accentRed,
+                                  color: license.isActivated
+                                      ? AppTheme.accentEmerald
+                                      : AppTheme.accentRed,
                                 ),
                               ),
                             ),
@@ -597,24 +748,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   const Expanded(
                                     child: Text(
                                       "기기 고유 코드 (Device UUID)",
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
                                   ),
                                   InkWell(
                                     onTap: () {
-                                      Clipboard.setData(ClipboardData(text: license.deviceId));
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("📋 기기 코드가 복사되었습니다.")),
+                                      Clipboard.setData(
+                                        ClipboardData(text: license.deviceId),
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text("📋 기기 코드가 복사되었습니다."),
+                                        ),
                                       );
                                     },
                                     child: const Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 2,
+                                      ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(Icons.copy, size: 13, color: AppTheme.primaryBlue),
+                                          Icon(
+                                            Icons.copy,
+                                            size: 13,
+                                            color: AppTheme.primaryBlue,
+                                          ),
                                           SizedBox(width: 2),
-                                          Text("복사", style: TextStyle(fontSize: 11, color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+                                          Text(
+                                            "복사",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppTheme.primaryBlue,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -631,11 +806,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: AppTheme.primaryNavy,
                                 ),
                               ),
-                              if (license.userName.isNotEmpty || license.userAffiliation.isNotEmpty) ...[
+                              if (license.userName.isNotEmpty ||
+                                  license.userAffiliation.isNotEmpty) ...[
                                 const SizedBox(height: 6),
                                 Text(
                                   "등록 훈련생: ${license.userName}${license.userAffiliation.isNotEmpty ? ' (${license.userAffiliation})' : ''}",
-                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFF475569),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ],
@@ -654,30 +834,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 // 로컬 상태가 아니라 서버 응답을 그대로 보여준다.
                                 // (2026-08-29: 통신 실패·서명 거부까지 "정상 확인"으로 표시되던 문제 수정)
                                 final result = license.lastSyncResult;
-                                final isProblem = result != RemoteSyncResult.approved;
+                                final isProblem =
+                                    result != RemoteSyncResult.approved;
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(license.lastSyncMessage),
-                                    backgroundColor:
-                                        isProblem ? AppTheme.accentRed : null,
-                                    duration: Duration(seconds: isProblem ? 6 : 3),
+                                    backgroundColor: isProblem
+                                        ? AppTheme.accentRed
+                                        : null,
+                                    duration: Duration(
+                                      seconds: isProblem ? 6 : 3,
+                                    ),
                                   ),
                                 );
                               },
                               icon: const Icon(Icons.sync, size: 16),
-                              label: const Text("원격 승인 동기화", style: TextStyle(fontSize: 12)),
-                            ),
-                            OutlinedButton.icon(
-                              onPressed: () async {
-                                final allowed =
-                                    await _confirmDeveloperAccess(context, license);
-                                if (allowed && context.mounted) {
-                                  _showWebhookConfigDialog(context, license);
-                                }
-                              },
-                              icon: const Icon(Icons.link, size: 16),
-                              label: const Text("구글 시트 연동 설정", style: TextStyle(fontSize: 12)),
+                              label: const Text(
+                                "원격 승인 동기화",
+                                style: TextStyle(fontSize: 12),
+                              ),
                             ),
                           ],
                         ),
@@ -703,12 +879,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.verified_user_outlined, color: AppTheme.primaryBlue),
+                        Icon(
+                          Icons.verified_user_outlined,
+                          color: AppTheme.primaryBlue,
+                        ),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             "저작권 고지 및 개발자 정보",
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryNavy),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryNavy,
+                            ),
                           ),
                         ),
                       ],
@@ -729,7 +912,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildLegalInfoRow(
                       icon: Icons.security,
                       title: "이용 및 법적 면책",
-                      content: "본 앱은 개인 훈련 전용이며 무단 배포를 금지합니다. 무단 사용/배포 및 기능 품질에 대해 개발자는 법적 책임을 지지 않습니다.",
+                      content:
+                          "본 앱은 개인 훈련 전용이며 무단 배포를 금지합니다. 무단 사용/배포 및 기능 품질에 대해 개발자는 법적 책임을 지지 않습니다.",
                     ),
                   ],
                 ),
@@ -829,7 +1013,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Expanded(
               child: Text(
                 "${step.name} 수정",
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -882,139 +1069,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await context.read<QuickTriggerProvider>().refreshFromRepository();
     if (!context.mounted) return;
     await context.read<VoiceExamProvider>().generateNewQuestion();
-  }
-
-  /// 웹훅 URL 변경은 개발자 전용 기능이므로 마스터 인증키를 다시 확인한다.
-  Future<bool> _confirmDeveloperAccess(BuildContext context, LicenseService license) async {
-    final controller = TextEditingController();
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.admin_panel_settings_outlined, color: AppTheme.primaryBlue),
-            SizedBox(width: 8),
-            Expanded(child: Text("개발자 확인", style: TextStyle(fontSize: 16))),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "구글 시트 연동 주소는 원격 승인·차단에 직접 연결되는 개발자 설정입니다.\n"
-              "변경하려면 마스터 인증키를 입력해 주세요.",
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              obscureText: true,
-              decoration: const InputDecoration(
-                hintText: "마스터 인증키",
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("취소"),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.pop(ctx, license.verifyMasterPin(controller.text)),
-            child: const Text("확인"),
-          ),
-        ],
-      ),
-    );
-
-    if (ok != true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("마스터 인증키가 일치하지 않아 변경할 수 없습니다."),
-          backgroundColor: AppTheme.accentRed,
-        ),
-      );
-    }
-    return ok == true;
-  }
-
-  void _showWebhookConfigDialog(BuildContext context, LicenseService license) {
-    final controller = TextEditingController(text: license.webhookUrl);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.link, color: AppTheme.primaryBlue),
-            SizedBox(width: 8),
-            Text("구글 시트 웹앱 URL 설정", style: TextStyle(fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "개발자용 Google Apps Script 웹앱 배포 URL을 입력하면 원격 킬스위치 및 실시간 등록 텔레메트리가 연동됩니다.",
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: "https://script.google.com/macros/s/.../exec",
-                hintStyle: TextStyle(fontSize: 11),
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-              style: const TextStyle(fontSize: 12),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("취소"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final url = controller.text.trim();
-              final uri = Uri.tryParse(url);
-              final isValid = url.isNotEmpty &&
-                  uri != null &&
-                  uri.isScheme('https') &&
-                  uri.host.endsWith('google.com');
-
-              if (!isValid) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text("https://script.google.com/... 형식의 주소만 저장할 수 있습니다."),
-                    backgroundColor: AppTheme.accentRed,
-                  ),
-                );
-                return;
-              }
-
-              await license.setWebhookUrl(url);
-              if (context.mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("✅ 구글 웹앱 URL이 저장되었습니다.")),
-                );
-              }
-            },
-            child: const Text("저장"),
-          ),
-        ],
-      ),
-    );
   }
 }

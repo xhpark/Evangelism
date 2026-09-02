@@ -45,20 +45,28 @@ void main() {
   group('한국어 정규화 안전성 (TS-NORM-004 ~ 005)', () {
     test('TS-NORM-004: 지시어·감탄사를 대본에서 지우지 않는다', () {
       // '그', '이', '아'는 대본에 실제로 쓰이는 낱말이라 삭제하면 안 된다.
-      expect(KoreanTextNormalizer.normalize('그 은혜에 의하여 구원을 받았으니'),
-          contains('그 은혜에'));
+      expect(
+        KoreanTextNormalizer.normalize('그 은혜에 의하여 구원을 받았으니'),
+        contains('그 은혜에'),
+      );
       expect(KoreanTextNormalizer.normalize('아 그러시군요'), contains('아'));
 
       // 실제 추임새는 계속 제거한다.
-      expect(KoreanTextNormalizer.normalize('어... 음... 영생은 선물입니다'),
-          equals('영생은 선물입니다'));
+      expect(
+        KoreanTextNormalizer.normalize('어... 음... 영생은 선물입니다'),
+        equals('영생은 선물입니다'),
+      );
     });
 
     test('TS-NORM-005: 장/절 수사만 숫자로 바꾸고 일반 낱말은 보존한다', () {
-      expect(KoreanTextNormalizer.normalize('요한복음 삼장 십육절'),
-          equals('요한복음 3장 16절'));
-      expect(KoreanTextNormalizer.normalize('이사야 오십삼장 육절'),
-          equals('이사야 53장 6절'));
+      expect(
+        KoreanTextNormalizer.normalize('요한복음 삼장 십육절'),
+        equals('요한복음 3장 16절'),
+      );
+      expect(
+        KoreanTextNormalizer.normalize('이사야 오십삼장 육절'),
+        equals('이사야 53장 6절'),
+      );
 
       // '사장님', '일절'은 그대로 (이전에는 '4장님', '1절'로 깨졌다)
       final result = KoreanTextNormalizer.normalize('이 사장님은 일절 관여하지 않습니다');
@@ -96,5 +104,19 @@ void main() {
       expect(partial.totalScore, lessThan(100.0));
       expect(partial.totalScore, greaterThan(0.0));
     });
+  });
+
+  test('TS-SCORE-007: 반복 단어는 실제 발화 횟수만큼만 일치한다', () {
+    final result = ScoringEngine.calculateScore(
+      examId: 'repeat',
+      title: '반복 단어',
+      originalText: '은혜 은혜 은혜',
+      spokenText: '은혜',
+    );
+    expect(result.totalScore, lessThan(65.0));
+    expect(
+      result.diffTokens.where((token) => token.type.name == 'missing').length,
+      2,
+    );
   });
 }

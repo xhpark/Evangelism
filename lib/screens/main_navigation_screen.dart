@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/study_provider.dart';
@@ -10,9 +12,15 @@ import 'scripture_deck_screen.dart';
 import 'voice_exam_screen.dart';
 import 'settings_screen.dart';
 import 'blocked_screen.dart';
+import 'license_activation_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  const MainNavigationScreen({
+    super.key,
+    this.licenseCheckInterval = const Duration(minutes: 5),
+  });
+
+  final Duration? licenseCheckInterval;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -21,6 +29,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen>
     with WidgetsBindingObserver {
   int _currentIndex = 0;
+  Timer? _licenseTimer;
 
   final List<Widget> _screens = const [
     StudyScreen(),
@@ -34,11 +43,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<LicenseService>().checkRemoteKillSwitch());
+    });
+    final interval = widget.licenseCheckInterval;
+    if (interval != null) {
+      _licenseTimer = Timer.periodic(interval, (_) {
+        if (!mounted) return;
+        unawaited(context.read<LicenseService>().checkRemoteKillSwitch());
+      });
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _licenseTimer?.cancel();
     super.dispose();
   }
 
@@ -46,7 +67,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       // 앱이 다시 포그라운드로 올라올 때마다 원격 승인 상태를 재확인한다.
-      context.read<LicenseService>().checkRemoteKillSwitch();
+      unawaited(context.read<LicenseService>().checkRemoteKillSwitch());
     } else if (state == AppLifecycleState.paused) {
       // 백그라운드로 내려가면 재생/수음을 정지해 배터리와 오인식을 방지한다.
       _stopAllAudioSessions();
@@ -70,12 +91,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     if (license.isBlocked) {
       return const BlockedScreen();
     }
+    if (!license.isActivated) {
+      return const LicenseActivationScreen();
+    }
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {

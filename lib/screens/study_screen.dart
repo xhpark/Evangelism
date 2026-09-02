@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/study_provider.dart';
+import '../providers/quick_trigger_provider.dart';
+import '../providers/voice_exam_provider.dart';
 import '../widgets/audio_control_bar.dart';
 import '../widgets/sentence_card.dart';
 import '../widgets/hand_outline_widget.dart';
@@ -42,8 +44,9 @@ class _StudyScreenState extends State<StudyScreen> {
     final currentSection = study.currentSection;
     if (currentSection == null || currentSection.steps.isEmpty) return;
 
-    final activeIndex = currentSection.steps
-        .indexWhere((step) => step.stepId == study.activeStepId);
+    final activeIndex = currentSection.steps.indexWhere(
+      (step) => step.stepId == study.activeStepId,
+    );
 
     if (activeIndex != -1 && _scrollController.hasClients) {
       final activeStep = currentSection.steps[activeIndex];
@@ -70,8 +73,10 @@ class _StudyScreenState extends State<StudyScreen> {
           // 3. 화면 밖으로 언마운트된 경우: 인덱스 기반으로 대략적인 위치로 이동
           const estimatedCardHeight = 160.0;
           final viewportHeight = _scrollController.position.viewportDimension;
-          final targetOffset = (activeIndex * estimatedCardHeight - (viewportHeight * (isLongCard ? 0.1 : 0.4)))
-              .clamp(0.0, _scrollController.position.maxScrollExtent);
+          final targetOffset =
+              (activeIndex * estimatedCardHeight -
+                      (viewportHeight * (isLongCard ? 0.1 : 0.4)))
+                  .clamp(0.0, _scrollController.position.maxScrollExtent);
 
           _scrollController.animateTo(
             targetOffset,
@@ -83,11 +88,19 @@ class _StudyScreenState extends State<StudyScreen> {
 
       // 3. 긴 카드의 경우 (예화/기도 등): 발화 중간(약 50% 시점)에 카드의 하단부로 자연스럽게 스크롤 추적
       if (isLongCard && study.isPlaying) {
-        final durationSeconds = (activeStep.effectiveScript.length / (9.0 * study.speedRate)).clamp(4.0, 35.0);
+        final durationSeconds =
+            (activeStep.effectiveScript.length / (9.0 * study.speedRate)).clamp(
+              4.0,
+              35.0,
+            );
         final delayMs = (durationSeconds * 450).round(); // 전체 발화 시간의 약 45% 시점
 
         _progressiveScrollTimer = Timer(Duration(milliseconds: delayMs), () {
-          if (!mounted || study.activeStepId != activeStep.stepId || !study.isPlaying) return;
+          if (!mounted ||
+              study.activeStepId != activeStep.stepId ||
+              !study.isPlaying) {
+            return;
+          }
           final key = _itemKeys[activeStep.stepId];
           if (key != null && key.currentContext != null) {
             Scrollable.ensureVisible(
@@ -142,9 +155,7 @@ class _StudyScreenState extends State<StudyScreen> {
                   offset: const Offset(0, 2),
                 ),
               ],
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade200),
-              ),
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
             ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -173,7 +184,10 @@ class _StudyScreenState extends State<StudyScreen> {
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppTheme.primaryBlue
@@ -191,7 +205,9 @@ class _StudyScreenState extends State<StudyScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : AppTheme.primaryNavy,
+                            color: isSelected
+                                ? Colors.white
+                                : AppTheme.primaryNavy,
                           ),
                         ),
                       ),
@@ -210,7 +226,9 @@ class _StudyScreenState extends State<StudyScreen> {
                 selectedIndex: currentSection.fingerIndex!,
                 onFingerSelected: (fingerIdx) {
                   _lastActiveStepId = null;
-                  final targetIdx = study.sections.indexWhere((s) => s.fingerIndex == fingerIdx);
+                  final targetIdx = study.sections.indexWhere(
+                    (s) => s.fingerIndex == fingerIdx,
+                  );
                   if (targetIdx != -1) {
                     study.selectSection(targetIdx);
                     if (_scrollController.hasClients) {
@@ -240,7 +258,10 @@ class _StudyScreenState extends State<StudyScreen> {
                   ),
                   Text(
                     "총 ${currentSection.steps.length}개 문장",
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -273,6 +294,14 @@ class _StudyScreenState extends State<StudyScreen> {
                           },
                           onEdit: (newText) async {
                             await study.updateStepScript(step.stepId, newText);
+                            if (!context.mounted) return;
+                            await context
+                                .read<QuickTriggerProvider>()
+                                .refreshFromRepository();
+                            if (!context.mounted) return;
+                            await context
+                                .read<VoiceExamProvider>()
+                                .generateNewQuestion();
                           },
                         ),
                       );

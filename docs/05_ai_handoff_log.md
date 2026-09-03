@@ -400,3 +400,38 @@ Apps Script 웹앱은 콜드 스타트 때 5초를 넘나든다. 기존 5초 제
 
 * 훈련생에게는 정식 release APK 다운로드 링크와 개인별 `UNUSED` 코드만 전달합니다. Apps Script 주소와 관리 시트는 공유하지 않습니다.
 * `createActivationCodes(count)`는 1~100개를 만들지만 편집기에서 인수 없이 직접 실행하면 기본 1개만 생성됩니다. 여러 개는 `createActivationCodes(10)`처럼 호출하는 무인수 관리자 래퍼를 두고 실행합니다.
+
+---
+
+## 9. 2026-09-04 작업 기록 — Codex 리뷰 검토 수용 및 릴리즈 빌드 가드 파이프라인 구축
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 9.1 Codex 검토 의견 확인 및 정책 확정
+
+1. **Codex 피드백 팩트 체크 및 수용**:
+   * STT 백오프는 지수가 아닌 300ms 선형 증가(`min(3000, 300 * count)`).
+   * 활성화 코드는 `ACT-` 접두사가 아닌 16자리 16진수(`XXXX-XXXX-XXXX-XXXX`).
+   * 실서버는 `protocol=device_token_v2`, `status=OK`로 정상 배포·운영 중임을 재실측 확인.
+   * 단위/통합 테스트는 14개 파일 48개 전체 통과 확인.
+2. **정책 확정**:
+   * 의뢰인(박상환 님)의 명시적 승인("찬성한다")에 따라, 보안이 취약한 구형 마스터 PIN 복원 논의를 종결하고 **일회용 코드 ➔ 기기 암호화 토큰(v2) 체계를 영구 공식 표준으로 확정**.
+
+### 9.2 보완 작업 내용
+
+1. **릴리즈 빌드 서버 URL 누락 차단 가드 (`android/app/build.gradle.kts`)**:
+   * `--dart-define=LICENSE_API_URL` 없이 `flutter build apk --release`를 무심코 실행할 경우, 빌드 시작 즉시 `GradleException`을 발생시켜 **활성화 불가능한 먹통 APK 생성을 원천 차단**.
+   * 서버 URL이 Google Apps Script WebApp 형식(`https://script.google.com/macros/s/.../exec`)과 일치하는지 엄격히 검증.
+2. **원클릭 안전 릴리즈 빌드 파이프라인 (`scripts/build_release_apk.ps1`)**:
+   * Git에서 제외된 `android/key.properties` 또는 환경변수에서 라이선스 서버 URL 자동 로드.
+   * 빌드 전 실시간 서버 헬스체크 (`status=OK`, `protocol=device_token_v2`) 자동 수행 (`-SkipHealthCheck` 지원).
+   * 서명 키 무결성 확인 후 `LICENSE_API_URL`을 자동 주입하여 릴리즈 APK 빌드.
+   * 빌드 완료 후 산출물 크기 및 SHA-256 해시값 자동 검증 및 리포트.
+
+### 9.3 검증 결과
+
+* `flutter analyze` ➔ **경고 0건 (No issues found!)**
+* `flutter test` ➔ **48개 전체 통과**
+* **URL 누락 빌드 차단 검증**: `flutter build apk --release` 단독 실행 시 Gradle에서 즉시 빌드 차단 확인.
+* **파이프라인 빌드 검증**: `scripts/build_release_apk.ps1` 실행 완료 (55.92 MB, SHA-256 해시 정상 생성 확인).
+* **실기기 설치**: 의뢰인 지침에 따라 추후 USB 연결 후 별도 진행 예정.

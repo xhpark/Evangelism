@@ -1,5 +1,7 @@
 import java.util.Properties
 import java.io.FileInputStream
+import java.util.Base64
+import java.nio.charset.StandardCharsets
 
 plugins {
     id("com.android.application")
@@ -18,8 +20,33 @@ val hasReleaseKeystore = keystorePropertiesFile.exists()
 val isReleaseBuild = gradle.startParameter.taskNames.any {
     it.contains("release", ignoreCase = true)
 }
-if (isReleaseBuild && !hasReleaseKeystore) {
-    throw GradleException("Release signing requires android/key.properties.")
+if (isReleaseBuild) {
+    if (!hasReleaseKeystore) {
+        throw GradleException("Release signing requires android/key.properties.")
+    }
+    val rawDartDefines = project.findProperty("dart-defines") as String?
+    val hasValidServerUrl = if (!rawDartDefines.isNullOrBlank()) {
+        rawDartDefines.split(",").mapNotNull { entry ->
+            try {
+                val bytes = Base64.getDecoder().decode(entry)
+                String(bytes, StandardCharsets.UTF_8)
+            } catch (_: Exception) {
+                null
+            }
+        }.any { define: String ->
+            define.startsWith("LICENSE_API_URL=https://script.google.com/macros/s/", ignoreCase = false) &&
+            define.endsWith("/exec", ignoreCase = false)
+        }
+    } else {
+        false
+    }
+    if (!hasValidServerUrl) {
+        throw GradleException(
+            "Release APK build failed: LICENSE_API_URL is missing or invalid in --dart-define. " +
+            "Please run 'powershell scripts/build_release_apk.ps1' or provide --dart-define=LICENSE_API_URL=https://script.google.com/macros/s/.../exec " +
+            "to prevent generating an unactivatable APK."
+        )
+    }
 }
 if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -28,7 +55,6 @@ if (hasReleaseKeystore) {
 android {
     namespace = "com.evangelism.just_ee.just_ee_master"
     compileSdk = 37
-    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

@@ -136,6 +136,29 @@ function createActivationCodes(count) {
   return amount;
 }
 
+/** 20개의 일회용 활성화 코드를 원클릭으로 생성하는 관리자 함수 */
+function create20ActivationCodes() {
+  return createActivationCodes(20);
+}
+
+/** 10개의 일회용 활성화 코드를 원클릭으로 생성하는 관리자 함수 */
+function create10ActivationCodes() {
+  return createActivationCodes(10);
+}
+
+/** 스프레드시트 열릴 때 상단 메뉴 자동 등록 */
+function onOpen() {
+  try {
+    const ui = SpreadsheetApp.getUi();
+    ui.createMenu("🔐 JUST EE 라이선스 관리")
+      .addItem("일회용 활성화 코드 20개 생성", "create20ActivationCodes")
+      .addItem("일회용 활성화 코드 10개 생성", "create10ActivationCodes")
+      .addToUi();
+  } catch (_) {
+    // 트리거 환경에 따라 getUi가 없는 경우 무시
+  }
+}
+
 function licenseSheet_() {
   return ensureSheet_(LICENSE_SHEET, [
     "등록일시", "기기 코드", "훈련생/소속", "상태",

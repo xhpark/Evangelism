@@ -3,13 +3,11 @@ import '../theme/app_theme.dart';
 
 class HandOutlineWidget extends StatelessWidget {
   final int selectedIndex; // 1 ~ 5
-  final bool isFollowUpMode; // false: 복음 5대 대지, true: 양육 5대 수단
   final Function(int index) onFingerSelected;
 
   const HandOutlineWidget({
     super.key,
     required this.selectedIndex,
-    this.isFollowUpMode = false,
     required this.onFingerSelected,
   });
 
@@ -21,18 +19,8 @@ class HandOutlineWidget extends StatelessWidget {
     {"num": "5", "name": "소지", "label": "믿음", "icon": "🤙"},
   ];
 
-  static const List<Map<String, String>> _followUpFingers = [
-    {"num": "1", "name": "엄지", "label": "성경", "icon": "📖"},
-    {"num": "2", "name": "검지", "label": "기도", "icon": "🙏"},
-    {"num": "3", "name": "중지", "label": "예배", "icon": "⛪"},
-    {"num": "4", "name": "약지", "label": "교제", "icon": "🤝"},
-    {"num": "5", "name": "소지", "label": "전도", "icon": "📢"},
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final list = isFollowUpMode ? _followUpFingers : _gospelFingers;
-
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
@@ -46,12 +34,10 @@ class HandOutlineWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
+              const Expanded(
                 child: Text(
-                  isFollowUpMode
-                      ? "🖐️ 영적 성장 5대 수단 (손가락 원리)"
-                      : "🖐️ 복음 5대 핵심 개요 (Hand Outline)",
-                  style: const TextStyle(
+                  "🖐️ 복음 5대 핵심 개요 (Hand Outline)",
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryNavy,
@@ -68,7 +54,7 @@ class HandOutlineWidget extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: list.map((item) {
+            children: _gospelFingers.map((item) {
               final idx = int.parse(item['num']!);
               final isSelected = (selectedIndex == idx);
 

@@ -20,7 +20,9 @@ class ScriptureDeckScreen extends StatelessWidget {
               provider.isPlaying ? Icons.stop_circle : Icons.repeat,
               color: provider.isPlaying ? AppTheme.accentGold : Colors.white,
             ),
-            tooltip: provider.isPlaying ? "반복 재생 정지" : "전체 8구절 연속 반복 듣기",
+            tooltip: provider.isPlaying
+                ? "반복 재생 정지"
+                : "전체 ${provider.cards.length}구절 연속 반복 듣기",
             onPressed: () => provider.togglePlayAllRepeat(),
           ),
           IconButton(
@@ -126,7 +128,7 @@ class ScriptureDeckScreen extends StatelessWidget {
                           onPressed: () => provider.togglePlayAllRepeat(),
                           tooltip: provider.isPlaying
                               ? "전체 반복 재생 정지"
-                              : "전체 8구절 연속 반복 듣기",
+                              : "전체 ${provider.cards.length}구절 연속 반복 듣기",
                         ),
                       ],
                     ),
@@ -150,7 +152,7 @@ class ScriptureDeckScreen extends StatelessWidget {
                             ? _maskBlanks(card.text, card.blankWords)
                             : card.text,
                         style: const TextStyle(
-                          fontSize: 17,
+                           fontSize: 17,
                           height: 1.65,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF1E293B),
@@ -192,7 +194,7 @@ class ScriptureDeckScreen extends StatelessWidget {
               ),
             const SizedBox(height: 16),
 
-            // 전체 8구절 연속 반복 듣기 컨트롤 버튼
+            // 전체 구절 연속 반복 듣기 컨트롤 버튼
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -214,7 +216,7 @@ class ScriptureDeckScreen extends StatelessWidget {
                 label: Text(
                   provider.isPlaying
                       ? "전체 반복 듣기 정지 (현재 ${provider.currentIndex + 1}/${provider.cards.length}구절)"
-                      : "전체 8구절 연속 반복 듣기",
+                      : "전체 ${provider.cards.length}구절 연속 반복 듣기",
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,

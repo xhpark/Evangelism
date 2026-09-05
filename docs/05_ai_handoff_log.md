@@ -14,11 +14,11 @@
 | :--- | :--- |
 | 프로젝트 | 전도폭발 JUST EE 훈련 마스터 (Flutter / Android) |
 | 경로 | `d:\proj\Evangelism` |
-| 상태 관리 | Provider (MVVM), `lib/main.dart`의 `MultiProvider`에 **6종** 등록 |
+| 상태 관리 | Provider (MVVM), `lib/main.dart`의 `MultiProvider`에 **7종** 등록 (상태관리 6 + 저장소 1) |
 | 대본 원본 | `data/just_ee_data.json` — 8개 섹션 / **총 40문장** |
 | 성경 암송 덱 | `lib/services/scripture_deck_engine.dart` — **8구절 하드코딩** |
 | 전환문장 6개 | `data/just_ee_data.json`의 `transition_text` 필드 (하드코딩 아님) |
-| 검증 명령 | `flutter analyze` (경고 0건 유지) / `flutter test` (**48개** 통과) |
+| 검증 명령 | `flutter analyze` (경고 0건 유지) / `flutter test` (**61개** 통과, 15개 파일) |
 | 문서 | `README.md`, `docs/01`~`docs/04`, 그리고 본 문서 |
 
 ---
@@ -769,6 +769,44 @@ Apps Script 웹앱은 콜드 스타트 때 5초를 넘나든다. 기존 5초 제
 ### 19.3 최종 검증 결과
 * **`flutter analyze`**: **경고 0건 (No issues found!)**
 * **`flutter test`**: **15개 파일 61개 전체 통과** (실측치 확인)
+
+---
+
+## 20. 2026-09-05 작업 기록 — 전면 전수 감사 기반 안정성·오디오 중재·메모리 누수 방지 및 문서 정합성 정비
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 20.1 작업 배경
+* 프로젝트 문서와 코드에 대한 전면 검토(운영/상호연동, 학습/테스트 관점) 결과 제안된 1단계 안정성/오디오 중재/메모리 누수 방지 조치를 의뢰인의 승인에 따라 신속히 반영 및 검증.
+
+### 20.2 수정 및 개선 내용
+1. **성경덱 오디오 중재 연결 (`lib/screens/main_navigation_screen.dart`)**:
+   - 탭 전환 및 앱 백그라운드 일시정지 시 `_stopAllAudioSessions()`에서 `ScriptureProvider.stopAudio()`를 누락 없이 호출하여 다른 탭 이동 시 성경 낭독 TTS가 백그라운드에서 계속 흘러나오는 오디오 누출 원천 차단.
+2. **싱글턴 및 Provider 메모리 누수 방지**:
+   - `StudyProvider.dispose()`: `TTSService` 싱글턴에 주입된 `onStepStarted = null`, `onStepCompleted = null` 콜백 명시적 해제 및 `stop()`, `disableKeepScreenOn()` 안전 호출.
+   - `VoiceExamProvider.dispose()`: 녹음 도중 이탈 시 `DeviceHelperService.disableKeepScreenOn()`을 호출하여 단말기 화면 켜짐 유지(Wakelock) 영구 고착 차단.
+   - `VoiceExamProvider` & `QuickTriggerProvider`: 긴 지문 채점(`calculateScoreAsync`) 비동기 완료 후 `if (!_isDisposed)` 검사로 비활성 객체 예외 방어.
+   - `STTService`: `stopListening()`, `cancel()`, `_handleEngineStopped()`에서 수음 소유자 콜백(`_onResult`, `_onLevel`, `_onStopped`, `_onError`)을 명시적으로 `null` 초기화(`_clearCallbacks()`).
+3. **위젯 생명주기 및 리소스 누수 방지**:
+   - `BlockedScreen._handleRetry()`: 원격 차단 상태 비동기 확인 후 `if (!mounted) return;` 가드 배치.
+   - `SentenceCard` 및 `SettingsScreen`: 대본 수정 다이얼로그의 `TextEditingController`를 `try ... finally` 블록에서 안전하게 `dispose()` 호출.
+   - `SettingsScreen`: 미사용 `StudyProvider study` 로컬 변수 및 매개변수 정리.
+4. **UI 수치 하드코딩 및 사장 코드 정비**:
+   - `DiffReportWidget`: `"📊 공식 5대 평가 영역별 성적표"` ➔ `"📊 공식 ${result.areaScores!.length}대 평가 영역별 성적표"`로 동적/유연하게 렌더링.
+   - `ScriptureDeckScreen`: 툴팁 및 버튼의 `"8구절"` 하드코딩 ➔ `"${provider.cards.length}구절"`로 동적 데이터 바인딩 (`AGENTS.md` 수치 하드코딩 금지 규칙 준수).
+   - `HandOutlineWidget`: 미사용 `isFollowUpMode` 및 `_followUpFingers` 잔재 코드 정리.
+   - 사장 코드 삭제: 프로젝트 전체에서 전혀 참조되지 않던 114줄의 `lib/models/follow_up_model.dart` 영구 제거.
+5. **테스트 명칭 및 명세서 동기화**:
+   - `test/widget_test.dart`: `TS-WIDG-001`, `TS-WIDG-002` 접두사 동기화.
+   - `test/user_custom_script_import_test.dart`: `TS-CUST-001` 접두사 동기화.
+   - `docs/02_module_test_specs.md`: 요약 표에 누락되어 있던 8개 테스트(`scripture_deck_test.dart` 3건, `TS-TRIG-004~006`, `TS-EDIT-002`, `TS-PLAY-003`)를 전수 반영하여 총 15개 파일 61개 테스트와 100% 일치시킴.
+   - `docs/05` 0절 요약 표: 48개 ➔ **61개** 통과, Provider 6종 ➔ **7종** 등록으로 갱신.
+   - `AGENTS.md`: Provider 6종 ➔ **7종** 등록 (상태관리 6종 + 저장소 1종)으로 정정.
+   - `docs/01`, `docs/03`, `docs/04`: 앱 최신 버전 `1.0.3+4` 및 동적 타임아웃 설명 통일.
+
+### 20.3 최종 검증 결과
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **15개 파일 61개 전체 통과** (100% PASS)
 
 
 

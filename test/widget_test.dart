@@ -24,7 +24,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('App smoke test: BottomNavigationBar 5개 탭 렌더링 확인', (
+  testWidgets('TS-WIDG-001: App smoke test: BottomNavigationBar 5개 탭 렌더링 확인', (
     WidgetTester tester,
   ) async {
     final repository = ScriptRepository();
@@ -54,7 +54,7 @@ void main() {
       ),
     );
 
-    // 하단 내비게이션 5개 핵심 탭 아이템 확인
+    // 5개 탭 바 아이템 확인
     expect(find.text('학습/청취'), findsOneWidget);
     expect(find.text('순발력/전환'), findsOneWidget);
     expect(find.text('성경덱'), findsOneWidget);
@@ -63,7 +63,7 @@ void main() {
   });
 
   testWidgets(
-    'WelcomeTermsScreen: 저작권, 개발자 정보(박상환, xhpark@naver.com) 및 동의 체크 게이트 검증',
+    'TS-WIDG-002: WelcomeTermsScreen: 저작권, 개발자 정보(박상환, xhpark@naver.com) 및 동의 체크 게이트 검증',
     (WidgetTester tester) async {
       final licenseService = _testLicenseService();
       await licenseService.initialize();

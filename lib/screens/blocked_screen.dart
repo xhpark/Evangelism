@@ -23,6 +23,8 @@ class _BlockedScreenState extends State<BlockedScreen> {
     final license = Provider.of<LicenseService>(context, listen: false);
     await license.checkRemoteKillSwitch();
 
+    if (!mounted) return;
+
     setState(() {
       _isRetrying = false;
     });

@@ -332,10 +332,11 @@ class _SentenceCardState extends State<SentenceCard> {
     );
   }
 
-  void _showEditDialog(BuildContext context) {
+  void _showEditDialog(BuildContext context) async {
     final controller = TextEditingController(text: widget.step.effectiveScript);
-    showDialog(
-      context: context,
+    try {
+      await showDialog(
+        context: context,
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
@@ -387,5 +388,8 @@ class _SentenceCardState extends State<SentenceCard> {
         ],
       ),
     );
+    } finally {
+      controller.dispose();
+    }
   }
 }

@@ -108,6 +108,14 @@ class STTService {
       _onError?.call(_toKoreanMessage(errorMsg));
     }
     _onStopped?.call();
+    _clearCallbacks();
+  }
+
+  void _clearCallbacks() {
+    _onResult = null;
+    _onLevel = null;
+    _onStopped = null;
+    _onError = null;
   }
 
   String _toKoreanMessage(String raw) {
@@ -201,6 +209,7 @@ class STTService {
       await _speech.stop();
     } catch (_) {}
     _onStopped?.call();
+    _clearCallbacks();
   }
 
   /// 취소 (결과 폐기)
@@ -215,5 +224,6 @@ class STTService {
     try {
       await _speech.cancel();
     } catch (_) {}
+    _clearCallbacks();
   }
 }

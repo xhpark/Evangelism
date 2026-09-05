@@ -10,7 +10,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('사용자 전도폭발 전문 텍스트 파싱 및 8대 대지 매핑 검증', () async {
+    test('TS-CUST-001: 사용자 전도폭발 전문 텍스트 파싱 및 8대 대지 매핑 검증', () async {
       final repo = ScriptRepository();
 
       const userScript = '''

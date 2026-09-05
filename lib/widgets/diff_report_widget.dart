@@ -113,11 +113,11 @@ class DiffReportWidget extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // 2. 모의 구두시험 5대 영역별 세부 점수표 (있을 경우)
+        // 2. 모의 구두시험 영역별 세부 점수표 (있을 경우)
         if (result.areaScores != null && result.areaScores!.isNotEmpty) ...[
-          const Text(
-            "📊 공식 5대 평가 영역별 성적표",
-            style: TextStyle(
+          Text(
+            "📊 공식 ${result.areaScores!.length}대 평가 영역별 성적표",
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppTheme.primaryNavy,

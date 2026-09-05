@@ -176,7 +176,9 @@ class VoiceExamProvider extends ChangeNotifier {
       _history = await _repository.getExamHistory();
     } finally {
       _isScoring = false;
-      notifyListeners();
+      if (!_isDisposed) {
+        notifyListeners();
+      }
     }
   }
 
@@ -196,6 +198,7 @@ class VoiceExamProvider extends ChangeNotifier {
     _isDisposed = true;
     _repository.removeListener(_onRepositoryChanged);
     _stt.cancel();
+    DeviceHelperService.disableKeepScreenOn();
     super.dispose();
   }
 }

@@ -1,8 +1,8 @@
 # 전도폭발 JUST EE 훈련 마스터 상세 설계서 (Detailed Design Document)
 
-**문서 버전:** v2.5 (2026-09-02 활성화 호환성 및 실서버 검증 반영)
+**문서 버전:** v2.7 (2026-09-05 안정성 보강, 동적 타임아웃 및 61개 테스트 반영)
 **작성일:** 2026-08-29  
-**최종 검증:** 2026-09-02 — 앱 `1.0.1+2`, `flutter analyze` 0건, `flutter test` 48개 통과, 라인 커버리지 47.0%, release APK 실기기 설치·활성화 성공
+**최종 검증:** 2026-09-05 — 앱 `1.0.3+4`, `flutter analyze` 0건, `flutter test` 61개 통과, release APK 실기기 설치·활성화 성공
 **프로젝트 위치:** `d:\proj\Evangelism`  
 **개발 프레임워크:** Flutter 3.44.0 (Dart 3.12.0)  
 **대상 플랫폼:** Android (Phone & Tablet)  
@@ -23,23 +23,24 @@
 │   - BlockedScreen (원격 킬 스위치 가동 시 비인가 단말기 접근 차단 화면)  │
 │   - MainNavigationScreen (5대 핵심 탭 네비게이션)                      │
 │     1. StudyScreen (TTS 0.8x~2.0x 배속, 4대 재생모드, 5손가락 연동)     │
-│     2. QuickTriggerScreen (1s/2s/3s 순발력 STT & 6대 전환문장 덱)      │
+│     2. QuickTriggerScreen (동적 타임아웃 순발력 STT & 6대 전환문장 덱)  │
 │     3. ScriptureDeckScreen (핵심 8구절 암송 덱 & 빈칸 퀴즈)            │
 │     4. VoiceExamScreen (시작 문두 3/4/5단어 제시 ➔ 7대 연계 완주 시험)  │
 │     5. SettingsScreen (보안 라이선스 관리, TTS 보이스/톤, 대본 편집)    │
 ├────────────────────────────────────────────────────────────────────────┤
 │                       State Management (Provider)                      │
-│   - LicenseService        - StudyProvider                              │
-│   - QuickTriggerProvider  - ScriptureProvider                          │
-│   - VoiceExamProvider     - ScriptManageProvider                       │
-│   (main.dart MultiProvider에 등록된 6종이 전부이며 그 외 Provider 없음) │
+│   - ScriptRepository (SSOT) - LicenseService                          │
+│   - StudyProvider           - QuickTriggerProvider                     │
+│   - ScriptureProvider       - VoiceExamProvider                        │
+│   - ScriptManageProvider                                               │
+│   (main.dart MultiProvider에 등록된 7종 — 상태관리 6종 + 저장소 1종)   │
 ├────────────────────────────────────────────────────────────────────────┤
 │                       Domain Layer (Business Logic)                    │
 │   - LicenseService (기기 토큰 보안 저장, 서버 승인, 원격 킬스위치)    │
 │   - RandomExamEngine (7대 연계 출제 모드 & 3/4/5단어 문두 힌트 추출)    │
 │   - ScoringEngine (어절 대조 & 키워드 가중치 채점, 긴 지문은 아이솔레이트) │
 │   - KoreanTextNormalizer (간투사 필터, 한글 수사 ➔ 아라비아 숫자 통일) │
-│   - QuickTriggerEngine (난이도별 1s/2s/3s 타이머 & 선두 단어 추출)     │
+│   - QuickTriggerEngine (1.0x/1.2x/1.5x 동적 소요시간 & 앞뒤 단어 추출)  │
 │   - TransitionSentenceEngine (6대 대지 전환문장 무결성 검증)           │
 │   - ScriptureDeckEngine (핵심 8구절 카드 & 빈칸 퀴즈 마스킹 데이터)     │
 │   - DeviceHelperService (단말 기종/OS 정보 수집 ➔ 텔레메트리 전송)     │

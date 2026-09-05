@@ -270,7 +270,9 @@ class QuickTriggerProvider extends ChangeNotifier {
       _cardState = TriggerCardState.revealed;
     } finally {
       _isScoring = false;
-      notifyListeners();
+      if (!_isDisposed) {
+        notifyListeners();
+      }
     }
   }
 

@@ -71,14 +71,18 @@ class StudyProvider extends ChangeNotifier {
     notifyListeners();
 
     await _ttsService.initialize();
-    _sections = await _repository.loadSections();
+    final loadedSections = await _repository.loadSections();
+    if (_isDisposed) return;
+    _sections = loadedSections;
 
     _ttsService.onStepStarted = (stepId) {
+      if (_isDisposed) return;
       _activeStepId = stepId;
       notifyListeners();
     };
 
     _ttsService.onStepCompleted = (stepId) {
+      if (_isDisposed) return;
       notifyListeners();
     };
 
@@ -399,6 +403,10 @@ class StudyProvider extends ChangeNotifier {
   void dispose() {
     _isDisposed = true;
     _repository.removeListener(_onRepositoryChanged);
+    _ttsService.onStepStarted = null;
+    _ttsService.onStepCompleted = null;
+    _ttsService.stop();
+    DeviceHelperService.disableKeepScreenOn();
     super.dispose();
   }
 }

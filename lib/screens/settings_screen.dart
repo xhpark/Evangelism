@@ -46,7 +46,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ScriptManageProvider>();
-    final study = context.read<StudyProvider>();
 
     return Scaffold(
       appBar: AppBar(title: const Text("⚙️ 대본 보기 및 수정 설정")),
@@ -439,7 +438,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                   context,
                                                   step,
                                                   provider,
-                                                  study,
                                                 ),
                                           ),
                                         ],
@@ -1000,65 +998,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     StepItem step,
     ScriptManageProvider provider,
-    StudyProvider study,
-  ) {
+  ) async {
     final controller = TextEditingController(text: step.effectiveScript);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.edit_note, color: AppTheme.primaryBlue),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                "${step.name} 수정",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+    try {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.edit_note, color: AppTheme.primaryBlue),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "${step.name} 수정",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: TextField(
+              controller: controller,
+              maxLines: 8,
+              style: const TextStyle(fontSize: 14, height: 1.45),
+              decoration: const InputDecoration(
+                hintText: "수정할 대본 텍스트를 입력하세요.",
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.all(12),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("취소"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newText = controller.text.trim();
+                if (newText.isNotEmpty) {
+                  await provider.updateStep(step.stepId, newText);
+                  if (!context.mounted) return;
+                  await _propagateScriptChange(context);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("문장이 성공적으로 수정되어 저장되었습니다.")),
+                    );
+                  }
+                }
+                if (context.mounted) Navigator.pop(ctx);
+              },
+              child: const Text("저장 및 즉시 반영"),
             ),
           ],
         ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: TextField(
-            controller: controller,
-            maxLines: 8,
-            style: const TextStyle(fontSize: 14, height: 1.45),
-            decoration: const InputDecoration(
-              hintText: "수정할 대본 텍스트를 입력하세요.",
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(12),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("취소"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newText = controller.text.trim();
-              if (newText.isNotEmpty) {
-                await provider.updateStep(step.stepId, newText);
-                if (!context.mounted) return;
-                await _propagateScriptChange(context);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("문장이 성공적으로 수정되어 저장되었습니다.")),
-                  );
-                }
-              }
-              if (context.mounted) Navigator.pop(ctx);
-            },
-            child: const Text("저장 및 즉시 반영"),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   /// 대본이 바뀌면 학습 탭뿐 아니라 순발력 덱과 실전시험 문항까지 함께 갱신한다.

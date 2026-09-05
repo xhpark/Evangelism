@@ -13,7 +13,7 @@
 | 대본 8섹션 / 총 40문장 | `data/just_ee_data.json` (실전시험은 순수 성경구절 제외 34문장) |
 | 성경 암송 8구절 | `lib/services/scripture_deck_engine.dart` |
 | 전환문장 6개 | `data/just_ee_data.json`의 `transition_text` |
-| 등록된 Provider 6종 | `lib/main.dart` |
+| 등록된 Provider 7종 | `lib/main.dart` (상태관리 6종 + 저장소 1종) |
 | 테스트 61개 (15개 파일) | `test/` |
 
 ## 필수 규칙

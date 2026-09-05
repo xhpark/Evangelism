@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/study_provider.dart';
 import '../providers/quick_trigger_provider.dart';
+import '../providers/scripture_provider.dart';
 import '../providers/voice_exam_provider.dart';
 import '../services/license_service.dart';
 import 'study_screen.dart';
@@ -78,6 +79,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   /// (IndexedStack 특성상 이전 탭이 살아 있어 학습 재생과 시험 수음이 겹칠 수 있음)
   void _stopAllAudioSessions() {
     context.read<StudyProvider>().stopAudio();
+    context.read<ScriptureProvider>().stopAudio();
     final quick = context.read<QuickTriggerProvider>();
     if (quick.isListening) quick.abortListening();
     final exam = context.read<VoiceExamProvider>();

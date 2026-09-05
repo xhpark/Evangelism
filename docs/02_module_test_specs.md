@@ -4,7 +4,7 @@
 **작성일:** 2026-09-05
 **테스트 프레임워크:** Flutter Test (`flutter test`)  
 **테스트 스위트 구성:** 총 15개 파일, 61개 단위/위젯 테스트 (100% 통과)
-**최종 실행 결과:** 2026-09-05 앱 `1.0.2+3` / `flutter test` → `+61: All tests passed!` / `flutter analyze` → `No issues found!` / release APK 실기기 검증 완료
+**최종 실행 결과:** 2026-09-05 앱 `1.0.3+4` / `flutter test` → `+61: All tests passed!` / `flutter analyze` → `No issues found!` / release APK 실기기 검증 완료
 
 ---
 
@@ -25,7 +25,10 @@
 | | TS-NORM-003 | `KoreanTextNormalizer` | 특수문자 및 다중 공백 제거 정제 검증 | PASS |
 | `quick_trigger_engine_test.dart` | TS-TRIG-001 | `QuickTriggerEngine` | 문장 선두부(Lead-in) 난이도별 3/4/5단어 추출 | PASS |
 | | TS-TRIG-002 | `QuickTriggerEngine` | 덱 생성 시 셔플 무결성 및 전환문장 필터링 | PASS |
-| | TS-TRIG-003 | `QuickTriggerEngine` | 난이도별 프리셋 시간(1.0s, 2.0s, 3.0s) 검증 | PASS |
+| | TS-TRIG-003 | `QuickTriggerEngine` | 난이도별 배속(1.0x, 1.2x, 1.5x) 및 프리셋 호환성 검증 | PASS |
+| | TS-TRIG-004 | `QuickTriggerEngine` | 1.0x/1.2x/1.5x 문장 낭독 소요 시간 기반 동적 타임아웃 계산 검증 | PASS |
+| | TS-TRIG-005 | `QuickTriggerEngine` | 최소 시간 2.0초 보장 및 빈 스크립트 기본 시간 검증 | PASS |
+| | TS-TRIG-006 | `QuickTriggerEngine` | 시작/끝 단어(초급 5단어, 중급 4단어, 고급 3단어) 동시 노출 프롬프트 검증 | PASS |
 | `random_exam_engine_test.dart` | TS-RAND-001 | `RandomExamEngine` | 전환 ➔ 다음 단락 연계 암송 출제 검증 | PASS |
 | | TS-RAND-002 | `RandomExamEngine` | 예화 집중 완주 출제 검증 | PASS |
 | | TS-RAND-003 | `RandomExamEngine` | 실전시험에서 순수 성경 구절 제외 및 34문장 구성 검증 | PASS |
@@ -36,6 +39,7 @@
 | | TS-SCORE-002 | `ScoringEngine` | 핵심 키워드 누락 시 가중치 감점 및 Missing 마킹 | PASS |
 | | TS-SCORE-003 | `ScoringEngine` | 빈 문자열 발화 시 0점 및 전체 Missing 처리 | PASS |
 | `script_edit_propagation_test.dart` | TS-EDIT-001 | `ScriptManageProvider` | 문장 개별 수정 시 StudyProvider 및 채점 엔진 즉시 반영 | PASS |
+| | TS-EDIT-002 | `ScriptManageProvider` | 설정(ScriptManageProvider)에서 수정 시 학습(StudyProvider)에 수동 호출 없이 실시간 자동 동기화 검증 | PASS |
 | `script_import_test.dart` | TS-IMPO-001 | `ScriptRepository` | 외부 TXT 전문 파싱 및 8대 섹션 자동 분류 검증 | PASS |
 | | TS-IMPO-002 | `ScriptRepository` | 구조 없는 텍스트 거부 및 기존 대본 보존 검증 | PASS |
 | | TS-IMPO-003 | `ScriptRepository` | 직전 가져오기 백업 복원 및 1회성 되돌리기 검증 | PASS |
@@ -61,7 +65,11 @@
 | | TS-SCORE-010 | `KoreanTextNormalizer` | 한국어 수사 및 서수사 표준 정규화 검증 | PASS |
 | `playback_sequence_test.dart` | TS-PLAY-001 | `StudyProvider` | 전체 완주 재생 시 시작 챕터만 중간부터, 이후 챕터는 첫 문장부터 재생 검증 | PASS |
 | | TS-PLAY-002 | `ScriptRepository` | 교재 전문 8개 챕터 40문장 구성 검증 | PASS |
+| | TS-PLAY-003 | `StudyProvider` | 선택문장 무한 반복(singleRepeat) 모드에서 문장 선택 시 해당 문장 타깃 지정 및 유지 검증 | PASS |
 | | TS-HIST-001 | `ScriptRepository` | 시험 이력 최대 50건 상한 및 최신순 정렬 검증 | PASS |
+| `scripture_deck_test.dart` | TS-SCRIP-001 | `ScriptureDeckEngine` | 8대 성경 구절 로드 및 카테고리/의미/빈칸 데이터 무결성 검증 | PASS |
+| | TS-SCRIP-002 | `ScriptureProvider` | ScriptureProvider 전체 성경덱 반복 재생(playAllRepeat) 토글 및 정지 검증 | PASS |
+| | TS-SCRIP-003 | `ScriptureProvider` | 구절 순환(nextCard/prevCard/selectCard) 및 빈칸 퀴즈 모드 토글 검증 | PASS |
 | `widget_test.dart` | TS-WIDG-001 | `MainNavigationScreen` | BottomNavigationBar 5개 탭 렌더링 확인 | PASS |
 | | TS-WIDG-002 | `WelcomeTermsScreen` | 저작권 및 개인정보 별도 필수 동의 게이트 검증 | PASS |
 | | TS-STUDY-007 | `AudioControlBar` | 1.2x 배속 추가 및 2.5x 삭제 렌더링/이벤트 검증 | PASS |

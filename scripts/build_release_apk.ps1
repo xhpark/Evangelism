@@ -82,7 +82,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 6. 산출물 검증
-$ApkPath = "build\app\outputs\flutter-apk\app-release.apk"
+$ApkPath = Join-Path $ProjectRoot "build\app\outputs\flutter-apk\app-release.apk"
 if (-not (Test-Path -Path $ApkPath)) {
     Write-Error "CRITICAL: 빌드 산출물 app-release.apk 를 찾을 수 없습니다."
 }

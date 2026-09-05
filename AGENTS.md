@@ -10,11 +10,11 @@
 
 | 확인할 것 | 근거 파일 |
 | :--- | :--- |
-| 대본 8섹션 / 총 40문장 | `data/just_ee_data.json` |
+| 대본 8섹션 / 총 40문장 | `data/just_ee_data.json` (실전시험은 순수 성경구절 제외 34문장) |
 | 성경 암송 8구절 | `lib/services/scripture_deck_engine.dart` |
 | 전환문장 6개 | `data/just_ee_data.json`의 `transition_text` |
 | 등록된 Provider 6종 | `lib/main.dart` |
-| 테스트 57개 (15개 파일) | `test/` |
+| 테스트 60개 (15개 파일) | `test/` |
 
 ## 필수 규칙
 
@@ -30,7 +30,7 @@
 
 ```bash
 flutter analyze            # 경고 0건 유지
-flutter test               # 57개 통과
+flutter test               # 60개 통과
 flutter build apk --debug  # Android 설정 변경 시 반드시 확인
 ```
 

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:just_ee_master/models/diff_token.dart';
 import 'package:just_ee_master/services/scoring_engine.dart';
 import 'package:just_ee_master/services/korean_text_normalizer.dart';
 
@@ -117,6 +118,66 @@ void main() {
     expect(
       result.diffTokens.where((token) => token.type.name == 'missing').length,
       2,
+    );
+  });
+
+  test('TS-SCORE-008: 띄어쓰기 차이에 대한 점수 복원력 및 키워드 인식 검증', () {
+    // STT에서 흔히 발생하는 띄어쓰기 불일치 ("값 없이", "선물 입니다")
+    const orig = '영생은 값없이 주시는 하나님의 선물입니다';
+    const spoken = '영생은 값 없이 주시는 하나님의 선물 입니다';
+    const kw = ['영생', '값없이', '하나님', '선물'];
+
+    final result = ScoringEngine.calculateScore(
+      examId: 'spacing',
+      title: '띄어쓰기 복원력',
+      originalText: orig,
+      spokenText: spoken,
+      keywords: kw,
+    );
+
+    // 공백 무시 음절 일치율과 키워드 공백 무시 검출로 95점 이상 획득
+    expect(result.totalScore, greaterThanOrEqualTo(95.0));
+    expect(result.keywordAccuracy, equals(100.0));
+  });
+
+  test('TS-SCORE-009: 중간 문장 건너뛰기 시 LCS 역추적으로 뒤 문장 정확 매칭', () {
+    const orig = '첫째 영생은 선물입니다. 둘째 인간은 죄인입니다. 셋째 하나님은 자비로우십니다.';
+    // 둘째 문장을 통째로 건너뛰고 셋째 문장만 발화한 경우
+    const spoken = '첫째 영생은 선물입니다. 셋째 하나님은 자비로우십니다.';
+
+    final result = ScoringEngine.calculateScore(
+      examId: 'skip_sentence',
+      title: '문장 건너뛰기',
+      originalText: orig,
+      spokenText: spoken,
+    );
+
+    // LCS 역추적으로 첫째와 셋째 문장이 correct로 판정되어 높은 점수 유지
+    expect(result.totalScore, greaterThan(60.0));
+
+    // 뒤 문장의 토큰들이 missing이나 extra로 오분류되지 않고 matched로 분류됨
+    final matchedTokens = result.diffTokens
+        .where((t) => t.type == DiffType.matched)
+        .map((t) => t.text)
+        .toList();
+    expect(matchedTokens, contains('첫째'));
+    expect(matchedTokens, contains('영생은'));
+    expect(matchedTokens, contains('셋째'));
+    expect(matchedTokens, contains('하나님은'));
+  });
+
+  test('TS-SCORE-010: 한국어 수사 및 서수사 정규화 검증', () {
+    expect(
+      KoreanTextNormalizer.normalize('2가지 질문을 드리겠습니다'),
+      equals('두 가지 질문을 드리겠습니다'),
+    );
+    expect(
+      KoreanTextNormalizer.normalize('하루 3번씩 죄를 짓는다면 1년에 1000번'),
+      equals('하루 세 번씩 죄를 짓는다면 일 년에 천 번'),
+    );
+    expect(
+      KoreanTextNormalizer.normalize('평생 살면서 90000번의 죄를 짓습니다'),
+      equals('평생 살면서 9만 번의 죄를 짓습니다'),
     );
   });
 }

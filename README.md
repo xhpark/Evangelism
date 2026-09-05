@@ -2,7 +2,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.44.0-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.12.0-0175C2?logo=dart)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/Tests-48%20Passed-brightgreen)](docs/02_module_test_specs.md)
+[![Tests](https://img.shields.io/badge/Tests-60%20Passed-brightgreen)](docs/02_module_test_specs.md)
 [![License](https://img.shields.io/badge/Security-One--time%20Code%20%2B%20Device%20Token-success)](README.md)
 
 전도폭발(EE International) 복음 제시 전문(1~8대 대지 40개 문장)의 **완벽한 암송과 실전 1:1 구두 훈련 역량 강화**를 위해 설계된 지능형 모바일 트레이닝 시스템입니다.
@@ -45,10 +45,10 @@
    * 전체 8구절 무한 연속 반복 듣기(스피커 터치 또는 하단 반복 버튼) 및 `[ ___ ]` 빈칸 퀴즈 모드.
 
 4. **🎙️ 4. 실전시험 (Real Voice Exam)**
-   * 7대 실전 시험 모드 (전환 ➔ 다음 단락 연계, 예화 집중 완주, 성경 구절 암송, 서론/결신 문답, 즉석 양육 항목별, 무작위 모의고사, 전체 전문 100% 완주).
+   * 6대 실전 시험 모드 (전환 ➔ 다음 단락 연계, 예화 집중 완주, 서론/결신 문답, 즉석 양육 항목별, 무작위 모의고사, 전체 전문 100% 완주 34문장 — 현장 특성에 맞춰 순수 성경 구절 암송은 제외).
    * 시작 문두(Lead-in Trigger) 3단어/4단어/5단어 가변 힌트 제공.
    * STT 장기 연속 수음 세그먼트 스티칭 (숨을 고르느라 인식이 끊겨도 자동 재개되어 장문 완주 가능).
-   * 어절 대조 기반 색상 분석 리포트 (🟢 일치 / 🔴 누락 / 🟡 변형).
+   * LCS DP 역추적 기반 정밀 어절 대조 색상 분석 리포트 (🟢 일치 / 🔴 누락 / 🟡 변형) 및 공백 무시 음절 일치율 + 한국어 수사 정규화 적용.
 
 5. **⚙️ 5. 설정 (Settings & Security)**
    * 기기 고유 코드(Device UUID) 확인 및 원격 승인 동기화.
@@ -63,13 +63,13 @@
 
 * **[📖 쉬운 앱 사용 설명서](docs/04_user_guide.md)**: 단계별 사용법 및 FAQ
 * **[📐 시스템 상세 설계서 v2.1](docs/01_detailed_design.md)**: 보안 시스템, 아키텍처, 8대 챕터 매핑
-* **[🧪 단위 및 모듈 테스트 명세서](docs/02_module_test_specs.md)**: 48개 단위/위젯 테스트 통과 내역
+* **[🧪 단위 및 모듈 테스트 명세서](docs/02_module_test_specs.md)**: 60개 단위/위젯 테스트 통과 내역
 * **[📋 통합 테스트 및 실기기 검증 계획서](docs/03_integration_test_plan.md)**: Galaxy S24 Ultra E2E 검증
 * **[⚙️ 구글 앱스 스크립트 백엔드 코드](scripts/google_apps_script_backend.js)**: 구글 시트 배포용 소스
 * **[🤝 AI 협업 인수인계 기록](docs/05_ai_handoff_log.md)**: 코드 현황·문서 동기화 이력 (Antigravity 등 타 AI 에이전트용)
 * **[🤖 AI 에이전트 작업 규칙](AGENTS.md)**: 저장소 공통 규칙 및 금지 사항
 
-자동 검증은 Flutter 테스트 48개, Apps Script 백엔드 통합 테스트 12개 그룹, 라인 커버리지 45% 하한, debug/release APK 빌드와 APK 서명 확인까지 포함합니다. 앱 버전은 `1.0.1+2`입니다. 2026-09-02 Galaxy S24 Ultra에서 새 서버 health 표식, 실제 일회용 코드 승인·소진, 동일 코드 재사용 거부, 포그라운드 복귀 후 토큰 승인과 최근 접속 갱신까지 확인했습니다. 강제 종료 후 재진입, 원격 차단, TTS/STT 항목은 통합 테스트 계획서의 남은 경계를 따릅니다.
+자동 검증은 Flutter 테스트 60개, Apps Script 백엔드 통합 테스트 12개 그룹, 라인 커버리지 45% 하한, debug/release APK 빌드와 APK 서명 확인까지 포함합니다. 앱 버전은 `1.0.2+3`입니다. 2026-09-02 Galaxy S24 Ultra에서 새 서버 health 표식, 실제 일회용 코드 승인·소진, 동일 코드 재사용 거부, 포그라운드 복귀 후 토큰 승인과 최근 접속 갱신까지 확인했습니다. 강제 종료 후 재진입, 원격 차단, TTS/STT 항목은 통합 테스트 계획서의 남은 경계를 따릅니다.
 
 ---
 

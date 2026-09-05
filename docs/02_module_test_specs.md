@@ -1,10 +1,10 @@
 # 전도폭발 JUST EE 단위 및 모듈 테스트 명세서 (Module Test Specifications)
 
-**문서 버전:** v2.5
-**작성일:** 2026-09-02
+**문서 버전:** v2.6
+**작성일:** 2026-09-05
 **테스트 프레임워크:** Flutter Test (`flutter test`)  
-**테스트 스위트 구성:** 총 14개 파일, 48개 단위/위젯 테스트 (100% 통과)
-**최종 실행 결과:** 2026-09-02 앱 `1.0.1+2` / `flutter test --coverage` → `+48: All tests passed!` / 라인 커버리지 47.0% / `flutter analyze` → `No issues found!` / release APK 빌드·서명·실기기 설치 성공
+**테스트 스위트 구성:** 총 15개 파일, 60개 단위/위젯 테스트 (100% 통과)
+**최종 실행 결과:** 2026-09-05 앱 `1.0.2+3` / `flutter test` → `+60: All tests passed!` / `flutter analyze` → `No issues found!` / release APK 실기기 검증 완료
 
 ---
 
@@ -28,9 +28,9 @@
 | | TS-TRIG-003 | `QuickTriggerEngine` | 난이도별 프리셋 시간(1.0s, 2.0s, 3.0s) 검증 | PASS |
 | `random_exam_engine_test.dart` | TS-RAND-001 | `RandomExamEngine` | 전환 ➔ 다음 단락 연계 암송 출제 검증 | PASS |
 | | TS-RAND-002 | `RandomExamEngine` | 예화 집중 완주 출제 검증 | PASS |
-| | TS-RAND-003 | `RandomExamEngine` | 성경 구절 암송 출제 검증 | PASS |
+| | TS-RAND-003 | `RandomExamEngine` | 실전시험에서 순수 성경 구절 제외 및 34문장 구성 검증 | PASS |
 | | TS-RAND-004 | `RandomExamEngine` | 즉석 양육 항목별 출제 검증 | PASS |
-| | TS-RAND-005 | `RandomExamEngine` | 모의 구두시험 5대 영역별 세부 성적표 산출 검증 | PASS |
+| | TS-RAND-005 | `RandomExamEngine` | 실전시험 4대 영역별 세부 성적표 산출 검증 | PASS |
 | `scoring_engine_test.dart` | TS-SCORE-001 | `ScoringEngine` | 100% 일치 발화 채점 (Myers Diff & 100점 산출) | PASS |
 | | TS-SCORE-002 | `ScoringEngine` | 핵심 키워드 누락 시 가중치 감점 및 Missing 마킹 | PASS |
 | | TS-SCORE-003 | `ScoringEngine` | 빈 문자열 발화 시 0점 및 전체 Missing 처리 | PASS |
@@ -55,11 +55,15 @@
 | | TS-NORM-005 | `KoreanTextNormalizer` | 장/절 수사만 숫자 변환하고 "사장님"·"일절"은 보존하는지 검증 | PASS |
 | | TS-SCORE-006 | `ScoringEngine` | 전체 완주 분량(800자 초과) 지문의 아이솔레이트 비동기 채점 동작 검증 | PASS |
 | | TS-SCORE-007 | `ScoringEngine` | 반복 단어를 실제 발화 횟수만큼만 순서대로 일치 처리하는지 검증 | PASS |
+| | TS-SCORE-008 | `ScoringEngine` | 띄어쓰기 차이에 대한 점수 복원력 및 키워드 인식 검증 | PASS |
+| | TS-SCORE-009 | `ScoringEngine` | 중간 문장 건너뛰기 시 LCS 역추적으로 뒤 문장 정확 매칭 검증 | PASS |
+| | TS-SCORE-010 | `KoreanTextNormalizer` | 한국어 수사 및 서수사 표준 정규화 검증 | PASS |
 | `playback_sequence_test.dart` | TS-PLAY-001 | `StudyProvider` | 전체 완주 재생 시 시작 챕터만 중간부터, 이후 챕터는 첫 문장부터 재생 검증 | PASS |
 | | TS-PLAY-002 | `ScriptRepository` | 교재 전문 8개 챕터 40문장 구성 검증 | PASS |
 | | TS-HIST-001 | `ScriptRepository` | 시험 이력 최대 50건 상한 및 최신순 정렬 검증 | PASS |
 | `widget_test.dart` | TS-WIDG-001 | `MainNavigationScreen` | BottomNavigationBar 5개 탭 렌더링 확인 | PASS |
 | | TS-WIDG-002 | `WelcomeTermsScreen` | 저작권 및 개인정보 별도 필수 동의 게이트 검증 | PASS |
+| | TS-STUDY-007 | `AudioControlBar` | 1.2x 배속 추가 및 2.5x 삭제 렌더링/이벤트 검증 | PASS |
 
 ---
 
@@ -75,9 +79,8 @@
 ---
 
 ## 3. 테스트 실행 명령어
-
 ```bash
-flutter test --coverage  # 48개 단위/위젯 테스트
+flutter test --coverage  # 60개 단위/위젯 테스트
 flutter analyze   # 정적 분석 (경고 0건 유지)
 node scripts/google_apps_script_backend.test.js  # 서버 통합 테스트
 dart run scripts/check_coverage.dart coverage/lcov.info 45  # 커버리지 하한

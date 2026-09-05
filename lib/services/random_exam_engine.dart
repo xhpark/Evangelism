@@ -8,11 +8,10 @@ import 'quick_trigger_engine.dart';
 enum ExamMode {
   transitionChain('전환 ➔ 다음 단락 연계', '전환문장 시작부를 제시하면 전환 완성 후 다음 단락 전체를 연계 암송'),
   illustrationChain('예화 집중 완주', '예화의 시작부를 제시하면 예화 단락 전체를 끝까지 암송'),
-  scriptureChain('성경 구절 암송', '성경 구절 시작부를 제시하면 말씀 전문 및 맥락을 암송'),
   introAndCommitChain('서론/결신 핵심 문답', '진단질문, 영접기도, 확신기도 시작부를 제시하면 해당 단락을 암송'),
   followUpChain('즉석 양육 항목별', '성경, 기도, 예배, 교제, 전도, 마침기도 시작부를 제시하면 단락 전체를 암송'),
-  randomMix('실전 무작위 출제', '전체 전환/예화/성경/서론/결신/양육 시작부 중 무작위 1문제 출제'),
-  fullSequential('전체 전문 100% 완주', '서론부터 즉석 양육까지 전문 전체를 완주하는 실전 모의시험');
+  randomMix('실전 무작위 출제', '전체 전환/예화/서론/결신/양육 시작부 중 무작위 1문제 출제'),
+  fullSequential('전체 전문 100% 완주', '서론부터 즉석 양육까지 전문 전체(34문장, 성경 구절 제외)를 완주하는 실전 모의시험');
 
   final String title;
   final String description;
@@ -56,7 +55,7 @@ class ExamQuestion {
 class RandomExamEngine {
   final Random _random = Random();
 
-  /// 모드별 시험 문제 생성
+  /// 모드별 시험 문제 생성 (성경 구절 암송은 실전시험에서 제외)
   ExamQuestion generateQuestion(ExamMode mode, List<Section> allSections) {
     if (allSections.isEmpty) {
       return ExamQuestion(
@@ -85,9 +84,6 @@ class RandomExamEngine {
       case ExamMode.illustrationChain:
         return _pickRandomIllustration(stepMap, allSections);
 
-      case ExamMode.scriptureChain:
-        return _pickRandomScripture(stepMap, allSections);
-
       case ExamMode.introAndCommitChain:
         return _pickRandomIntroOrCommit(secMap, stepMap, allSections);
 
@@ -98,96 +94,134 @@ class RandomExamEngine {
         final generators = [
           () => _pickRandomTransitionChain(secMap, stepMap, allSections),
           () => _pickRandomIllustration(stepMap, allSections),
-          () => _pickRandomScripture(stepMap, allSections),
           () => _pickRandomIntroOrCommit(secMap, stepMap, allSections),
           () => _pickRandomFollowUp(stepMap, allSections),
         ];
         return generators[_random.nextInt(generators.length)]();
 
       case ExamMode.fullSequential:
-        final fullText = allSections.map((s) => s.fullCombinedScript).join(' ');
-        final allKw = allSections.expand((s) => s.allKeywords).toList();
-        final firstLead = allSections.first.steps.first.effectiveScript;
+        final filteredSections = allSections.map((sec) {
+          final validSteps = sec.steps
+              .where((st) => st.type != StepType.verse || st.stepId == 'commit_5')
+              .toList();
+          return sec.copyWith(steps: validSteps);
+        }).where((sec) => sec.steps.isNotEmpty).toList();
+
+        final nonScriptureSteps =
+            filteredSections.expand((s) => s.steps).toList();
+        final fullText =
+            nonScriptureSteps.map((s) => s.effectiveScript).join(' ');
+        final allKw =
+            nonScriptureSteps.expand((s) => s.keywords).toSet().toList();
+        final firstLead = nonScriptureSteps.first.effectiveScript;
         return ExamQuestion(
-          title: "👑 전체 전문 100% 완주 시험",
+          title: "👑 전체 전문 100% 완주 시험 (성경 구절 제외)",
           category: "전체 완주",
           leadingScript: firstLead,
-          instruction: "서론부터 즉석 양육 마침 기도까지 전체 전문(40문장)을 처음부터 끝까지 빠짐없이 암송하세요.",
+          instruction:
+              "서론부터 즉석 양육 마침 기도까지 전체 전문(34문장, 성경 구절 암송 제외)을 처음부터 끝까지 빠짐없이 암송하세요.",
           originalText: fullText,
           keywords: allKw,
-          sourceSections: allSections,
+          sourceSections: filteredSections,
         );
     }
   }
 
-  // 1. 전환 ➔ 다음 단락 연계 암송 생성
+  // 1. 전환 ➔ 다음 단락 연계 암송 생성 (순수 성경구절 단계는 암송 제외)
   ExamQuestion _pickRandomTransitionChain(
     Map<String, Section> secMap,
     Map<String, StepItem> stepMap,
     List<Section> allSections,
   ) {
     final list = [
-      // 1) 은혜 ➔ 인간
+      // 1) 은혜 ➔ 인간 (롬 3:23 성경 구절 제외)
       _makeChain(
         title: "🔗 전환 연계: 은혜 ➔ [2.2 인간] 전체",
         instruction:
-            "위 전환 문장을 완성하고, 이어서 [2.2 인간] 대지 전체(인간은 죄인, 롬 3:23, 죄의 정의 3가지, 9만 번 죄 예화, 하나님 전환문장)를 이어서 암송하세요.",
-        steps: [stepMap['grace_4'], ...?secMap['humanity']?.steps],
+            "위 전환 문장을 완성하고, 이어서 [2.2 인간] 대지 전체(인간은 죄인, 죄의 정의 3가지, 9만 번 죄 예화, 하나님 전환문장)를 이어서 암송하세요. (성경 구절 제외)",
+        steps: [
+          stepMap['grace_4'],
+          stepMap['human_1'],
+          stepMap['human_3'],
+          stepMap['human_4'],
+          stepMap['human_5'],
+        ],
         sourceSections: [
           secMap['grace'] ?? allSections.first,
           secMap['humanity'] ?? allSections.first,
         ],
       ),
-      // 2) 인간 ➔ 하나님
+      // 2) 인간 ➔ 하나님 (요일 4:8/출 34:7 성경 구절 제외)
       _makeChain(
         title: "🔗 전환 연계: 인간 ➔ [2.3 하나님] 전체",
         instruction:
-            "위 전환 문장을 완성하고, 이어서 [2.3 하나님] 대지 전체(자비와 공의, 요일 4:8/출 34:7, 가르시아 장군 어머니 채찍 예화, 그리스도 전환문장)를 이어서 암송하세요.",
-        steps: [stepMap['human_5'], ...?secMap['god']?.steps],
+            "위 전환 문장을 완성하고, 이어서 [2.3 하나님] 대지 전체(자비와 공의, 가르시아 장군 어머니 채찍 예화, 그리스도 전환문장)를 이어서 암송하세요. (성경 구절 제외)",
+        steps: [
+          stepMap['human_5'],
+          stepMap['god_1'],
+          stepMap['god_3'],
+          stepMap['god_4'],
+        ],
         sourceSections: [
           secMap['humanity'] ?? allSections.first,
           secMap['god'] ?? allSections.first,
         ],
       ),
-      // 3) 하나님 ➔ 그리스도
+      // 3) 하나님 ➔ 그리스도 (사 53:6 성경 구절 제외)
       _makeChain(
         title: "🔗 전환 연계: 하나님 ➔ [2.4 그리스도] 전체",
         instruction:
-            "위 전환 문장을 완성하고, 이어서 [2.4 예수 그리스도] 대지 전체(참하나님 참인간, 죄의 책 예화, 사 53:6, 다 이루었다 부활·승천, 믿음 전환문장)를 이어서 암송하세요.",
-        steps: [stepMap['god_4'], ...?secMap['christ']?.steps],
+            "위 전환 문장을 완성하고, 이어서 [2.4 예수 그리스도] 대지 전체(참하나님 참인간, 죄의 책 예화, 다 이루었다 부활·승천, 믿음 전환문장)를 이어서 암송하세요. (성경 구절 제외)",
+        steps: [
+          stepMap['god_4'],
+          stepMap['christ_1'],
+          stepMap['christ_2'],
+          stepMap['christ_4'],
+          stepMap['christ_5'],
+        ],
         sourceSections: [
           secMap['god'] ?? allSections.first,
           secMap['christ'] ?? allSections.first,
         ],
       ),
-      // 4) 그리스도 ➔ 믿음
+      // 4) 그리스도 ➔ 믿음 (행 16:31 성경 구절 제외)
       _makeChain(
         title: "🔗 전환 연계: 그리스도 ➔ [2.5 믿음] 전체",
         instruction:
-            "위 전환 문장을 완성하고, 이어서 [2.5 믿음] 대지 전체(참 믿음 정의, 행 16:31, 의자 예화, 신뢰 이전 동기부여 질문)를 이어서 암송하세요.",
-        steps: [stepMap['christ_5'], ...?secMap['faith']?.steps],
+            "위 전환 문장을 완성하고, 이어서 [2.5 믿음] 대지 전체(참 믿음 정의, 의자 예화, 신뢰 이전 동기부여 질문)를 이어서 암송하세요. (성경 구절 제외)",
+        steps: [
+          stepMap['christ_5'],
+          stepMap['faith_1'],
+          stepMap['faith_3'],
+          stepMap['faith_4'],
+        ],
         sourceSections: [
           secMap['christ'] ?? allSections.first,
           secMap['faith'] ?? allSections.first,
         ],
       ),
-      // 5) 믿음 ➔ 결신
+      // 5) 믿음 ➔ 결신 (결신 질문, 3가지 의미, 영접 기도, 확신 기도, 구원의 확신 문답)
       _makeChain(
         title: "🔗 전환 연계: 믿음 ➔ [3. 결신] 전체",
         instruction:
-            "위 동기부여 전환 문장을 완성하고, 이어서 [3. 결신] 전체(결신 질문, 3가지 의미, 영접 기도, 확신 기도, 요 6:47)를 이어서 암송하세요.",
+            "위 동기부여 전환 문장을 완성하고, 이어서 [3. 결신] 전체(결신 질문, 3가지 의미, 영접 기도, 확신 기도, 구원의 확신 문답)를 이어서 암송하세요.",
         steps: [stepMap['faith_4'], ...?secMap['commitment']?.steps],
         sourceSections: [
           secMap['faith'] ?? allSections.first,
           secMap['commitment'] ?? allSections.first,
         ],
       ),
-      // 6) 서론 ➔ 은혜
+      // 6) 서론 허락 ➔ 은혜 (엡 2:8-9 성경 구절 제외)
       _makeChain(
         title: "🔗 전환 연계: 서론 허락 ➔ [2.1 은혜] 전체",
         instruction:
-            "위 복음 제시 허락 질문을 완성하고, 이어서 [2.1 은혜] 대지 전체(선물 핵심진리, 엡 2:8-9, 햇빛·공기·물 예화, 인간 전환문장)를 이어서 암송하세요.",
-        steps: [stepMap['intro_4'], ...?secMap['grace']?.steps],
+            "위 복음 제시 허락 질문을 완성하고, 이어서 [2.1 은혜] 대지 전체(선물 핵심진리, 햇빛·공기·물 예화, 인간 전환문장)를 이어서 암송하세요. (성경 구절 제외)",
+        steps: [
+          stepMap['intro_6'],
+          stepMap['grace_1'],
+          stepMap['grace_3'],
+          stepMap['grace_4'],
+        ],
         sourceSections: [
           secMap['intro'] ?? allSections.first,
           secMap['grace'] ?? allSections.first,
@@ -242,54 +276,7 @@ class RandomExamEngine {
     return list[_random.nextInt(list.length)];
   }
 
-  // 3. 성경 구절 암송 생성
-  ExamQuestion _pickRandomScripture(
-    Map<String, StepItem> stepMap,
-    List<Section> allSections,
-  ) {
-    final list = [
-      _makeSingle(
-        title: "📜 성경 암송: 에베소서 2장 8-9절",
-        instruction: "에베소서 2장 8-9절 말씀 전문을 토씨 하나 틀림없이 정확히 암송하세요.",
-        step: stepMap['grace_2'],
-        fallbackSection: allSections.first,
-      ),
-      _makeSingle(
-        title: "📜 성경 암송: 로마서 3장 23절",
-        instruction: "로마서 3장 23절 말씀 전문을 정확히 암송하세요.",
-        step: stepMap['human_2'],
-        fallbackSection: allSections.first,
-      ),
-      _makeSingle(
-        title: "📜 성경 암송: 요한일서 4:8b & 출애굽기 34:7b",
-        instruction: "하나님의 사랑과 공의를 증거하는 요한일서 4:8 및 출애굽기 34:7 말씀 전문을 암송하세요.",
-        step: stepMap['god_2'],
-        fallbackSection: allSections.first,
-      ),
-      _makeSingle(
-        title: "📜 성경 암송: 이사야 53장 6절",
-        instruction: "이사야 53장 6절 말씀 전문과 죄가 예수님께 옮겨졌다는 선포를 암송하세요.",
-        step: stepMap['christ_3'],
-        fallbackSection: allSections.first,
-      ),
-      _makeSingle(
-        title: "📜 성경 암송: 사도행전 16장 31절",
-        instruction: "사도행전 16장 31절 말씀 전문을 정확히 암송하세요.",
-        step: stepMap['faith_2'],
-        fallbackSection: allSections.first,
-      ),
-      _makeSingle(
-        title: "📜 성경 암송: 요한복음 6장 47절 & 구원의 확신",
-        instruction: "요한복음 6장 47절 말씀과 대상자 이름 치환 및 영생 확신 확인 문답 전체를 암송하세요.",
-        step: stepMap['commit_5'],
-        fallbackSection: allSections.first,
-      ),
-    ];
-
-    return list[_random.nextInt(list.length)];
-  }
-
-  // 4. 서론 & 결신 문답 암송 생성
+  // 3. 서론 & 결신 문답 암송 생성 (순수 성경 구절 제외)
   ExamQuestion _pickRandomIntroOrCommit(
     Map<String, Section> secMap,
     Map<String, StepItem> stepMap,
@@ -300,12 +287,6 @@ class RandomExamEngine {
         title: "💬 서론: 제1 진단 질문 (천국 확신)",
         instruction: "천국 확신 질문과 성경 소개 단락 전체를 암송하세요.",
         step: stepMap['intro_3'],
-        fallbackSection: allSections.first,
-      ),
-      _makeSingle(
-        title: "📜 서론 성경: 요한일서 5장 13절",
-        instruction: "성경 기록 목적을 증거하는 요한일서 5장 13절 말씀 전문을 암송하세요.",
-        step: stepMap['intro_4'],
         fallbackSection: allSections.first,
       ),
       _makeSingle(
@@ -343,7 +324,7 @@ class RandomExamEngine {
     return list[_random.nextInt(list.length)];
   }
 
-  // 5. 즉석 양육 항목별 암송 생성
+  // 4. 즉석 양육 항목별 암송 생성
   ExamQuestion _pickRandomFollowUp(
     Map<String, StepItem> stepMap,
     List<Section> allSections,
@@ -439,14 +420,14 @@ class RandomExamEngine {
     );
   }
 
-  /// 모의 구두시험 5대 영역별 세부 점수 산출
+  /// 실전 구두시험 핵심 4대 영역별 세부 점수 산출 (성경 구절 암송 제외)
   static List<ExamAreaScore> calculate5AreaBreakdown(
     String originalText,
     String spokenText,
   ) {
     final normSpoken = KoreanTextNormalizer.normalize(spokenText);
 
-    // 1. 교리 (30점)
+    // 1. 핵심 교리 진리 (35점)
     final doctrineKw = [
       '선물',
       '공로',
@@ -459,22 +440,9 @@ class RandomExamEngine {
       '예수',
       '믿음',
     ];
-    final doctrineScore = _scoreKeywords(normSpoken, doctrineKw, 30.0);
+    final doctrineScore = _scoreKeywords(normSpoken, doctrineKw, 35.0);
 
-    // 2. 성경구절 (25점)
-    final scriptureKw = [
-      '에베소서',
-      '로마서',
-      '마태복음',
-      '요한일서',
-      '출애굽기',
-      '요한복음',
-      '이사야',
-      '사도행전',
-    ];
-    final scriptureScore = _scoreKeywords(normSpoken, scriptureKw, 25.0);
-
-    // 3. 전환문장 (20점)
+    // 2. 대지 전환문장 (25점)
     final transKw = [
       '기쁜 소식',
       '인간에 관하여',
@@ -483,37 +451,46 @@ class RandomExamEngine {
       '오직 예수',
       '신뢰의 대상',
     ];
-    final transScore = _scoreKeywords(normSpoken, transKw, 20.0);
+    final transScore = _scoreKeywords(normSpoken, transKw, 25.0);
 
-    // 4. 예화 (15점)
-    final illustKw = ['햇빛', '공기', '물', '천사', '9만 번', '가르시아', '채찍', '책', '의자'];
-    final illustScore = _scoreKeywords(normSpoken, illustKw, 15.0);
+    // 3. 핵심 복음 예화 (25점)
+    final illustKw = [
+      '햇빛',
+      '공기',
+      '물',
+      '천사',
+      '9만 번',
+      '가르시아',
+      '채찍',
+      '책',
+      '의자',
+    ];
+    final illustScore = _scoreKeywords(normSpoken, illustKw, 25.0);
 
-    // 5. 즉석양육 & 결신 (10점)
+    // 4. 결신 및 즉석양육 (15점)
     final followKw = ['영접', '확신', '성경', '기도', '예배', '교제', '전도', '아멘'];
-    final followScore = _scoreKeywords(normSpoken, followKw, 10.0);
+    final followScore = _scoreKeywords(normSpoken, followKw, 15.0);
 
     return [
       ExamAreaScore(
         areaName: "1. 핵심 교리 진리",
         score: doctrineScore,
-        maxScore: 30.0,
+        maxScore: 35.0,
       ),
       ExamAreaScore(
-        areaName: "2. 필수 성경구절",
-        score: scriptureScore,
+        areaName: "2. 대지 전환문장",
+        score: transScore,
         maxScore: 25.0,
       ),
-      ExamAreaScore(areaName: "3. 대지 전환문장", score: transScore, maxScore: 20.0),
       ExamAreaScore(
-        areaName: "4. 핵심 복음 예화",
+        areaName: "3. 핵심 복음 예화",
         score: illustScore,
-        maxScore: 15.0,
+        maxScore: 25.0,
       ),
       ExamAreaScore(
-        areaName: "5. 결신 및 즉석양육",
+        areaName: "4. 결신 및 즉석양육",
         score: followScore,
-        maxScore: 10.0,
+        maxScore: 15.0,
       ),
     ];
   }
@@ -524,9 +501,11 @@ class RandomExamEngine {
     double maxScore,
   ) {
     if (keywords.isEmpty) return maxScore;
+    final cleanSpoken = spoken.replaceAll(' ', '');
     int matched = 0;
     for (final kw in keywords) {
-      if (spoken.contains(KoreanTextNormalizer.normalize(kw))) {
+      final cleanKw = KoreanTextNormalizer.normalize(kw).replaceAll(' ', '');
+      if (cleanSpoken.contains(cleanKw)) {
         matched++;
       }
     }

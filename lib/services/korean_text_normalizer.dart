@@ -59,9 +59,34 @@ class KoreanTextNormalizer {
     // 3. 한글 숫자/성경 장절 정규화
     text = normalizeScriptureRef(text);
 
-    // 4. 다중 공백 단일화 및 트림
+    // 4. 빈출 수사 및 계량 어절 통일 (두 가지 ↔ 2가지, 일 년 ↔ 1년 등)
+    text = normalizeNumerals(text);
+
+    // 5. 다중 공백 단일화 및 트림
     text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
 
+    return text;
+  }
+
+  /// 빈출 수사 및 계량 단위 정규화 (교재 대본 표준 표기로 통일)
+  static String normalizeNumerals(String input) {
+    String text = input;
+    text = text.replaceAll(RegExp(r'2\s*가지'), '두 가지');
+    text = text.replaceAll(RegExp(r'3\s*가지'), '세 가지');
+    text = text.replaceAll(RegExp(r'4\s*가지'), '네 가지');
+    text = text.replaceAll(RegExp(r'5\s*가지'), '다섯 가지');
+
+    text = text.replaceAll(RegExp(r'1\s*째|첫\s*번째'), '첫째');
+    text = text.replaceAll(RegExp(r'2\s*째|두\s*번째'), '둘째');
+    text = text.replaceAll(RegExp(r'3\s*째|세\s*번째'), '셋째');
+    text = text.replaceAll(RegExp(r'4\s*째|네\s*번째'), '넷째');
+    text = text.replaceAll(RegExp(r'5\s*째|다섯\s*번째'), '다섯째');
+
+    text = text.replaceAll(RegExp(r'하루\s*3\s*번'), '하루 세 번');
+    text = text.replaceAll(RegExp(r'1\s*년'), '일 년');
+    text = text.replaceAll(RegExp(r'1000\s*번'), '천 번');
+    text = text.replaceAll(RegExp(r'90000\s*번|9\s*만\s*번|구만\s*번'), '9만 번');
+    text = text.replaceAll(RegExp(r'구십\s*평생|구십평생'), '90평생');
     return text;
   }
 

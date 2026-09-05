@@ -92,37 +92,70 @@ class ScoringEngine {
       );
     }
 
-    // 1. 문자 단위 유사도 (Levenshtein Distance)
+    // 1. 문자 단위 유사도 (Levenshtein Distance: 공백 포함 및 공백 제거 CER 상호 보정)
     final charDist = _levenshteinDistance(normOrig, normSpoken);
     final maxLen = max(normOrig.length, normSpoken.length);
-    final charAcc = maxLen == 0 ? 1.0 : max(0.0, 1.0 - (charDist / maxLen));
+    final charAccWithSpaces =
+        maxLen == 0 ? 1.0 : max(0.0, 1.0 - (charDist / maxLen));
+
+    final normOrigNoSpace = normOrig.replaceAll(' ', '');
+    final normSpokenNoSpace = normSpoken.replaceAll(' ', '');
+    final charDistNoSpace =
+        _levenshteinDistance(normOrigNoSpace, normSpokenNoSpace);
+    final maxLenNoSpace =
+        max(normOrigNoSpace.length, normSpokenNoSpace.length);
+    final charAccNoSpace = maxLenNoSpace == 0
+        ? 1.0
+        : max(0.0, 1.0 - (charDistNoSpace / maxLenNoSpace));
+
+    // STT 호흡 공백 오차에 의해 부당하게 감점되지 않도록 두 지표 중 우수한 정확도 채택
+    final charAcc = max(charAccWithSpaces, charAccNoSpace);
 
     // 2. 단어/토큰 단위 일치도
     final origWords = normOrig.split(' ').where((w) => w.isNotEmpty).toList();
-    final spokenWords = normSpoken
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .toList();
+    final spokenWords =
+        normSpoken.split(' ').where((w) => w.isNotEmpty).toList();
 
-    // 순서와 반복 횟수를 보존하는 최장 공통 부분수열 길이로 계산한다.
-    // Set 기반 계산은 한 번 말한 단어로 원문의 모든 반복을 맞힌 것으로 처리했다.
+    // 순서와 반복 횟수를 보존하는 최장 공통 부분수열 길이로 계산
     final matchedWordCount = _orderedMatchedWordCount(origWords, spokenWords);
-    final tokenAcc = origWords.isEmpty
+    double tokenAcc = origWords.isEmpty
         ? 1.0
         : min(1.0, matchedWordCount / origWords.length);
+
+    // 비공백 텍스트가 사실상 일치하면 띄어쓰기 파편화에 관계없이 토큰 일치도를 보정
+    if (charAccNoSpace >= 0.98) {
+      tokenAcc = max(tokenAcc, 1.0);
+    } else if (charAccNoSpace >= 0.90) {
+      tokenAcc = max(tokenAcc, charAccNoSpace);
+    }
 
     // 3. 핵심 키워드 가중치 검사
     double keywordAcc = 1.0;
     if (keywords.isNotEmpty) {
+      // 출제 원문에 실제로 존재하는(또는 포함된) 키워드만 필터링하여 분모로 삼는다.
+      // (원문에 없는 개념 목차 라벨 등으로 인한 부당한 감점 원천 차단)
+      final validKeywords = keywords.where((kw) {
+        final normKwNoSpace =
+            KoreanTextNormalizer.normalize(kw).replaceAll(' ', '');
+        return normKwNoSpace.isNotEmpty &&
+            normOrigNoSpace.contains(normKwNoSpace);
+      }).toList();
+
+      final effectiveKeywords =
+          validKeywords.isNotEmpty ? validKeywords : keywords;
       int kwMatched = 0;
-      for (final kw in keywords) {
+      for (final kw in effectiveKeywords) {
         final normKw = KoreanTextNormalizer.normalize(kw);
-        if (normSpoken.contains(normKw) ||
-            spokenWords.any((w) => w.contains(normKw))) {
+        final normKwNoSpace = normKw.replaceAll(' ', '');
+        if (normSpokenNoSpace.contains(normKwNoSpace) ||
+            normSpoken.contains(normKw) ||
+            spokenWords.any(
+              (w) => isSameWordStem(normKw, w) || w.contains(normKw),
+            )) {
           kwMatched++;
         }
       }
-      keywordAcc = kwMatched / keywords.length;
+      keywordAcc = kwMatched / effectiveKeywords.length;
     }
 
     // 4. 최종 종합 점수 산출
@@ -133,7 +166,7 @@ class ScoringEngine {
     }
     finalScore = finalScore.clamp(0.0, 100.0);
 
-    // 5. Diff 토큰 생성 (어절 단위 lookahead 정렬 방식)
+    // 5. Diff 토큰 생성 (LCS 동적계획법 역추적 정렬 방식)
     final diffTokens = _generateDiffTokens(origWords, spokenWords);
 
     return ExamResult(
@@ -150,7 +183,7 @@ class ScoringEngine {
     );
   }
 
-  /// 한국어 조사 목록 (긴 것부터 검사)
+  /// 한국어 조사 및 빈출 어미 목록 (긴 것부터 검사)
   static const List<String> _josa = [
     '으로서',
     '으로써',
@@ -173,11 +206,22 @@ class ScoringEngine {
     '조차',
     '만을',
     '만은',
-    '으로',
     '와의',
     '과의',
     '들이',
     '들을',
+    '하셨습니까',
+    '하셨어요',
+    '하셨습니다',
+    '하셨다',
+    '하십니다',
+    '하세요',
+    '합니다',
+    '입니다',
+    '습니까',
+    '습니다',
+    '이에요',
+    '였어요',
     '은',
     '는',
     '이',
@@ -196,8 +240,8 @@ class ScoringEngine {
 
   /// 어간이 같은 단어인지 판정한다.
   /// - 완전히 같으면 참
-  /// - 한쪽이 다른 쪽의 접두(앞부분)이고 길이 차가 2 이하이면 참 ("주시" ↔ "주시는")
-  /// - 조사만 떼어낸 어간이 같으면 참 ("영생은" ↔ "영생을")
+  /// - 한쪽이 다른 쪽의 접두(앞부분)이고 길이 차가 3 이하이면 참 ("선물" ↔ "선물입니다", "주시" ↔ "주시는")
+  /// - 조사/어미만 떼어낸 어간이 같으면 참 ("영생은" ↔ "영생을", "하셨어요" ↔ "하셨습니까")
   /// 그 외에는 서로 다른 단어로 본다. ("선물입니다" ↔ "선반입니다"는 오답)
   static bool isSameWordStem(String a, String b) {
     if (a.isEmpty || b.isEmpty) return false;
@@ -207,7 +251,7 @@ class ScoringEngine {
     final longer = a.length <= b.length ? b : a;
     if (shorter.length >= 2 &&
         longer.startsWith(shorter) &&
-        longer.length - shorter.length <= 2) {
+        longer.length - shorter.length <= 3) {
       return true;
     }
 
@@ -275,76 +319,70 @@ class ScoringEngine {
     return v1[t.length];
   }
 
-  /// 단어별 Diff 토큰 정렬 생성
+  /// 단어별 Diff 토큰 정렬 생성 (LCS 동적계획법 역추적 방식)
   ///
-  /// 정통 Myers Diff가 아니라, 앞으로 3어절까지 살펴보며 맞춰가는 그리디 정렬이다.
-  /// (문서·UI 표기도 '어절 대조'로 통일했다 — 2026-08-29)
+  /// 정통 LCS(최장 공통 부분수열) DP 역추적을 사용하여
+  /// 문장 통째 누락(Missing), 추가/에코(Extra), 어간 일치(Matched)를
+  /// 단어 건너뜀 크기와 무관하게 100% 정밀하게 정렬 복원한다.
   static List<DiffToken> _generateDiffTokens(
     List<String> origWords,
     List<String> spokenWords,
   ) {
-    final tokens = <DiffToken>[];
-    int oIdx = 0;
-    int sIdx = 0;
+    final m = origWords.length;
+    final n = spokenWords.length;
+    if (m == 0 && n == 0) return [];
+    if (m == 0) {
+      return spokenWords
+          .map((w) => DiffToken(text: w, type: DiffType.extra))
+          .toList();
+    }
+    if (n == 0) {
+      return origWords
+          .map((w) => DiffToken(text: w, type: DiffType.missing))
+          .toList();
+    }
 
-    while (oIdx < origWords.length && sIdx < spokenWords.length) {
-      final oWord = origWords[oIdx];
-      final sWord = spokenWords[sIdx];
+    // DP 테이블 구성
+    final dp = List.generate(m + 1, (_) => List<int>.filled(n + 1, 0));
 
-      if (oWord == sWord) {
-        tokens.add(DiffToken(text: oWord, type: DiffType.matched));
-        oIdx++;
-        sIdx++;
-      } else if (isSameWordStem(oWord, sWord)) {
-        tokens.add(
-          DiffToken(text: sWord, type: DiffType.matched, originalText: oWord),
-        );
-        oIdx++;
-        sIdx++;
-      } else {
-        // 다음 몇 단어 내에서 매칭 탐색
-        int lookaheadO = -1;
-        for (int i = oIdx + 1; i < min(oIdx + 4, origWords.length); i++) {
-          if (origWords[i] == sWord) {
-            lookaheadO = i;
-            break;
-          }
-        }
-
-        if (lookaheadO != -1) {
-          // 중간의 원문 단어들은 누락(Missing) 처리
-          while (oIdx < lookaheadO) {
-            tokens.add(
-              DiffToken(text: origWords[oIdx], type: DiffType.missing),
-            );
-            oIdx++;
-          }
-          tokens.add(DiffToken(text: sWord, type: DiffType.matched));
-          oIdx++;
-          sIdx++;
+    for (int i = 1; i <= m; i++) {
+      for (int j = 1; j <= n; j++) {
+        if (isSameWordStem(origWords[i - 1], spokenWords[j - 1])) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
         } else {
-          // 사용자 추가/대체 발화
-          tokens.add(
-            DiffToken(text: sWord, type: DiffType.extra, originalText: oWord),
-          );
-          sIdx++;
-          oIdx++;
+          dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
         }
       }
     }
 
-    // 남아있는 원문 단어들 -> missing
-    while (oIdx < origWords.length) {
-      tokens.add(DiffToken(text: origWords[oIdx], type: DiffType.missing));
-      oIdx++;
+    // 역추적(Backtracking)하여 Diff 토큰 복원
+    final tokens = <DiffToken>[];
+    int i = m;
+    int j = n;
+
+    while (i > 0 || j > 0) {
+      if (i > 0 &&
+          j > 0 &&
+          isSameWordStem(origWords[i - 1], spokenWords[j - 1])) {
+        final isExact = origWords[i - 1] == spokenWords[j - 1];
+        tokens.add(DiffToken(
+          text: spokenWords[j - 1],
+          type: DiffType.matched,
+          originalText: isExact ? null : origWords[i - 1],
+        ));
+        i--;
+        j--;
+      } else if (j > 0 && (i == 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+        // 발화에 추가된 잉여/반복 단어
+        tokens.add(DiffToken(text: spokenWords[j - 1], type: DiffType.extra));
+        j--;
+      } else {
+        // 원문에서 누락된 단어
+        tokens.add(DiffToken(text: origWords[i - 1], type: DiffType.missing));
+        i--;
+      }
     }
 
-    // 남아있는 발화 단어들 -> extra
-    while (sIdx < spokenWords.length) {
-      tokens.add(DiffToken(text: spokenWords[sIdx], type: DiffType.extra));
-      sIdx++;
-    }
-
-    return tokens;
+    return tokens.reversed.toList();
   }
 }

@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 class AudioControlBar extends StatelessWidget {
   const AudioControlBar({super.key});
 
-  static const List<double> _speeds = [0.8, 1.0, 1.5, 2.0, 2.5];
+  static const List<double> _speeds = [0.8, 1.0, 1.2, 1.5, 2.0];
 
   @override
   Widget build(BuildContext context) {
@@ -58,16 +58,12 @@ class AudioControlBar extends StatelessWidget {
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? (s == 2.5
-                                          ? AppTheme.accentGold
-                                          : AppTheme.primaryBlue)
+                                    ? AppTheme.primaryBlue
                                     : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isSelected
-                                      ? (s == 2.5
-                                            ? AppTheme.accentGold
-                                            : AppTheme.primaryBlue)
+                                      ? AppTheme.primaryBlue
                                       : const Color(0xFFCBD5E1),
                                   width: 1.0,
                                 ),

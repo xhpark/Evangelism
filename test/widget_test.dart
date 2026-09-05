@@ -15,6 +15,7 @@ import 'package:just_ee_master/screens/welcome_terms_screen.dart';
 import 'package:just_ee_master/services/license_service.dart';
 import 'package:just_ee_master/services/license_token_store.dart';
 import 'package:just_ee_master/theme/app_theme.dart';
+import 'package:just_ee_master/widgets/audio_control_bar.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -100,6 +101,43 @@ void main() {
       // 체크 후 버튼 활성화
       startBtn = tester.widget(buttonFinder);
       expect(startBtn.onPressed, isNotNull);
+    },
+  );
+
+  testWidgets(
+    'AudioControlBar: 1.2x 배속 추가 및 2.5x 삭제 확인 (TS-STUDY-007)',
+    (WidgetTester tester) async {
+      final repository = ScriptRepository();
+      final studyProvider = StudyProvider(repository);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<StudyProvider>.value(
+          value: studyProvider,
+          child: const MaterialApp(
+            home: Scaffold(
+              bottomNavigationBar: AudioControlBar(),
+            ),
+          ),
+        ),
+      );
+
+      // 배속 버튼 0.8x, 1.0x, 1.2x, 1.5x, 2.0x 렌더링 확인
+      expect(find.text('0.8x'), findsOneWidget);
+      expect(find.text('1.0x'), findsOneWidget);
+      expect(find.text('1.2x'), findsOneWidget);
+      expect(find.text('1.5x'), findsOneWidget);
+      expect(find.text('2.0x'), findsOneWidget);
+
+      // 2.5x 미존재 확인
+      expect(find.text('2.5x'), findsNothing);
+
+      // 기본 배속은 1.0x
+      expect(studyProvider.speedRate, equals(1.0));
+
+      // 1.2x 터치 시 배속 1.2로 변경 확인
+      await tester.tap(find.text('1.2x'));
+      await tester.pump();
+      expect(studyProvider.speedRate, equals(1.2));
     },
   );
 }

@@ -22,7 +22,7 @@
 │   - LicenseActivationScreen (기기 코드 & 일회용 활성화 코드 게이트)   │
 │   - BlockedScreen (원격 킬 스위치 가동 시 비인가 단말기 접근 차단 화면)  │
 │   - MainNavigationScreen (5대 핵심 탭 네비게이션)                      │
-│     1. StudyScreen (TTS 0.8x~2.5x 배속, 4대 재생모드, 5손가락 연동)     │
+│     1. StudyScreen (TTS 0.8x~2.0x 배속, 4대 재생모드, 5손가락 연동)     │
 │     2. QuickTriggerScreen (1s/2s/3s 순발력 STT & 6대 전환문장 덱)      │
 │     3. ScriptureDeckScreen (핵심 8구절 암송 덱 & 빈칸 퀴즈)            │
 │     4. VoiceExamScreen (시작 문두 3/4/5단어 제시 ➔ 7대 연계 완주 시험)  │

@@ -319,7 +319,7 @@ class TTSService {
   static double _platformRate(double displayRate) =>
       (displayRate / 2.0).clamp(0.1, 1.5);
 
-  /// 배속 설정 (0.8x, 1.0x, 1.5x, 2.0x, 2.5x)
+  /// 배속 설정 (0.8x, 1.0x, 1.2x, 1.5x, 2.0x)
   Future<void> setSpeedRate(double rate) async {
     _speedRate = rate.clamp(0.5, 3.0);
     try {

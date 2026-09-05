@@ -14,7 +14,7 @@
 | 성경 암송 8구절 | `lib/services/scripture_deck_engine.dart` |
 | 전환문장 6개 | `data/just_ee_data.json`의 `transition_text` |
 | 등록된 Provider 6종 | `lib/main.dart` |
-| 테스트 56개 (15개 파일) | `test/` |
+| 테스트 57개 (15개 파일) | `test/` |
 
 ## 필수 규칙
 
@@ -30,7 +30,7 @@
 
 ```bash
 flutter analyze            # 경고 0건 유지
-flutter test               # 56개 통과
+flutter test               # 57개 통과
 flutter build apk --debug  # Android 설정 변경 시 반드시 확인
 ```
 

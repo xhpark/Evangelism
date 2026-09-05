@@ -674,6 +674,34 @@ Apps Script 웹앱은 콜드 스타트 때 5초를 넘나든다. 기존 5초 제
   - 적용 버전: `1.0.2 (Build 3)`
   - 앱 런칭 완료 및 데이터 보존 상태 확인.
 
+---
+
+## 17. 2026-09-05 작업 기록 — 학습/청취 배속 1.2x 추가 및 2.5x 삭제
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 17.1 요구사항 및 배경
+* **요구사항**: 학습/청취 화면 하단 오디오 컨트롤 바에서 `1.2x` 배속 옵션을 추가하고, 현실적으로 사용 빈도가 낮고 지나치게 빠른 `2.5x` 배속 옵션은 삭제.
+* **배속 구성 변경**: 기존 `[0.8x, 1.0x, 1.5x, 2.0x, 2.5x]` (5개) ➔ 변경 `[0.8x, 1.0x, 1.2x, 1.5x, 2.0x]` (5개).
+  - 전체 항목 수가 5개로 동일하게 유지되어 기존 가로 반응형 `Expanded` 레이아웃 폭과 간격이 깨짐 없이 완벽히 유지됨.
+
+### 17.2 수정 및 개선 내용
+1. **`AudioControlBar` 배속 리스트 및 스타일 정리 (`lib/widgets/audio_control_bar.dart`)**:
+   - `_speeds = [0.8, 1.0, 1.2, 1.5, 2.0]`로 변경.
+   - `s == 2.5` 조건 분기(골드 하이라이트 잔재) 제거 후 일관된 `AppTheme.primaryBlue` 선택 스타일 적용.
+2. **`TTSService` 주석 동기화 (`lib/services/tts_service.dart`)**:
+   - 지원 배속 안내 주석을 `(0.8x, 1.0x, 1.2x, 1.5x, 2.0x)`로 갱신.
+3. **단위/위젯 테스트 추가 (`test/widget_test.dart`)**:
+   - `AudioControlBar: 1.2x 배속 추가 및 2.5x 삭제 확인 (TS-STUDY-007)` 신규 작성.
+   - 0.8x, 1.0x, 1.2x, 1.5x, 2.0x 렌더링, 2.5x 미존재, 1.2x 터치 시 `studyProvider.speedRate` 변경 검증.
+4. **문서 동기화**:
+   - `README.md`, `docs/01_detailed_design.md`, `docs/03_integration_test_plan.md`, `docs/04_user_guide.md`, `AGENTS.md` 갱신 (실측 테스트 57개, 파일 15개).
+
+### 17.3 검증 결과
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **15개 파일 57개 전체 통과** (기존 56개 + 신규 1개)
+
+
 
 
 

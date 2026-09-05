@@ -127,10 +127,10 @@
 
 ### 3.2 실전시험 출제 엔진
 
-`RandomExamEngine.generateQuestion()`는 6대 모드를 지원하며, 각 모드는 **고정된 문항 은행이 아니라 대본 데이터에서 매번 무작위로 1문항을 생성**합니다. (순수 성경 구절 암송은 실전 특성에 맞춰 제외)
+`RandomExamEngine.generateQuestion()`는 7대 모드를 지원하며, 각 모드는 **고정된 문항 은행이 아니라 대본 데이터에서 매번 무작위로 1문항을 생성**합니다. (연계/완주 모드에서는 순수 성경 구절 암송을 제외하되, `scriptureChain` 모드에서는 핵심 성경 구절을 집중 출제)
 
-* `transitionChain` / `illustrationChain` / `introAndCommitChain` / `followUpChain`: 해당 카테고리에서 1문항 즉석 생성
-* `randomMix`: 위 4개 생성기 중 하나를 무작위 선택
+* `transitionChain` / `illustrationChain` / `scriptureChain` / `introAndCommitChain` / `followUpChain`: 해당 카테고리에서 1문항 즉석 생성
+* `randomMix`: 위 5개 생성기 중 하나를 무작위 선택
 * `fullSequential`: 전 섹션 중 순수 성경 구절 6개를 제외한 34문장 완주 1문항
 
 ---

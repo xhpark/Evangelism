@@ -87,5 +87,18 @@ void main() {
       // 성경 구절 영역은 제외됨
       expect(areaNames.any((n) => n.contains("성경 구절")), isFalse);
     });
+
+    test('TS-RAND-006: 성경 구절 암송 모드 예외적 성경 구절 출제 검증', () async {
+      final repo = ScriptRepository();
+      final sections = await repo.loadSections();
+      final engine = RandomExamEngine();
+
+      final q = engine.generateQuestion(ExamMode.scriptureChain, sections);
+
+      expect(q.triggerPrompt, isNotEmpty);
+      expect(q.instruction, contains("암송"));
+      expect(q.originalText, isNotEmpty);
+      expect(q.title, contains("성경 암송"));
+    });
   });
 }

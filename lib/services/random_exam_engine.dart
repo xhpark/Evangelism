@@ -6,11 +6,12 @@ import 'korean_text_normalizer.dart';
 import 'quick_trigger_engine.dart';
 
 enum ExamMode {
-  transitionChain('전환 ➔ 다음 단락 연계', '전환문장 시작부를 제시하면 전환 완성 후 다음 단락 전체를 연계 암송'),
+  transitionChain('전환 ➔ 다음 단락 연계', '전환문장 시작부를 제시하면 전환 완성 후 다음 단락 전체를 연계 암송 (성경 구절 제외)'),
   illustrationChain('예화 집중 완주', '예화의 시작부를 제시하면 예화 단락 전체를 끝까지 암송'),
-  introAndCommitChain('서론/결신 핵심 문답', '진단질문, 영접기도, 확신기도 시작부를 제시하면 해당 단락을 암송'),
+  scriptureChain('성경 구절 암송', '성경 구절 시작부를 제시하면 핵심 성경 구절 말씀 전문을 정확히 암송'),
+  introAndCommitChain('서론/결신 핵심 문답', '진단질문, 영접기도, 확신기도 시작부를 제시하면 해당 단락을 암송 (성경 구절 제외)'),
   followUpChain('즉석 양육 항목별', '성경, 기도, 예배, 교제, 전도, 마침기도 시작부를 제시하면 단락 전체를 암송'),
-  randomMix('실전 무작위 출제', '전체 전환/예화/서론/결신/양육 시작부 중 무작위 1문제 출제'),
+  randomMix('실전 무작위 출제', '전체 전환/예화/성경구절/서론/결신/양육 시작부 중 무작위 1문제 출제'),
   fullSequential('전체 전문 100% 완주', '서론부터 즉석 양육까지 전문 전체(34문장, 성경 구절 제외)를 완주하는 실전 모의시험');
 
   final String title;
@@ -84,6 +85,9 @@ class RandomExamEngine {
       case ExamMode.illustrationChain:
         return _pickRandomIllustration(stepMap, allSections);
 
+      case ExamMode.scriptureChain:
+        return _pickRandomScripture(stepMap, allSections);
+
       case ExamMode.introAndCommitChain:
         return _pickRandomIntroOrCommit(secMap, stepMap, allSections);
 
@@ -94,6 +98,7 @@ class RandomExamEngine {
         final generators = [
           () => _pickRandomTransitionChain(secMap, stepMap, allSections),
           () => _pickRandomIllustration(stepMap, allSections),
+          () => _pickRandomScripture(stepMap, allSections),
           () => _pickRandomIntroOrCommit(secMap, stepMap, allSections),
           () => _pickRandomFollowUp(stepMap, allSections),
         ];
@@ -276,7 +281,60 @@ class RandomExamEngine {
     return list[_random.nextInt(list.length)];
   }
 
-  // 3. 서론 & 결신 문답 암송 생성 (순수 성경 구절 제외)
+  // 3. 성경 구절 암송 생성 (실전시험 내 성경 구절 암송 전용 모드)
+  ExamQuestion _pickRandomScripture(
+    Map<String, StepItem> stepMap,
+    List<Section> allSections,
+  ) {
+    final list = [
+      _makeSingle(
+        title: "📜 성경 암송: 요한일서 5장 13절",
+        instruction: "성경 기록 목적을 증거하는 요한일서 5장 13절 말씀 전문을 토씨 하나 틀림없이 정확히 암송하세요.",
+        step: stepMap['intro_4'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "📜 성경 암송: 에베소서 2장 8-9절",
+        instruction: "에베소서 2장 8-9절 말씀 전문을 토씨 하나 틀림없이 정확히 암송하세요.",
+        step: stepMap['grace_2'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "📜 성경 암송: 로마서 3장 23절",
+        instruction: "로마서 3장 23절 말씀 전문을 토씨 하나 틀림없이 정확히 암송하세요.",
+        step: stepMap['human_2'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "📜 성경 암송: 요한일서 4:8b & 출애굽기 34:7b",
+        instruction: "하나님의 사랑과 공의를 증거하는 요한일서 4:8 및 출애굽기 34:7 말씀 전문을 정확히 암송하세요.",
+        step: stepMap['god_2'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "📜 성경 암송: 이사야 53장 6절",
+        instruction: "이사야 53장 6절 말씀 전문과 죄가 예수님께 옮겨졌다는 선포를 정확히 암송하세요.",
+        step: stepMap['christ_3'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "📜 성경 암송: 사도행전 16장 31절",
+        instruction: "사도행전 16장 31절 말씀 전문을 토씨 하나 틀림없이 정확히 암송하세요.",
+        step: stepMap['faith_2'],
+        fallbackSection: allSections.first,
+      ),
+      _makeSingle(
+        title: "📜 성경 암송: 요한복음 6장 47절 & 구원의 확신",
+        instruction: "요한복음 6장 47절 말씀과 대상자 이름 치환 및 영생 확신 확인 문답 전체를 암송하세요.",
+        step: stepMap['commit_5'],
+        fallbackSection: allSections.first,
+      ),
+    ];
+
+    return list[_random.nextInt(list.length)];
+  }
+
+  // 4. 서론 & 결신 문답 암송 생성 (순수 성경 구절 제외)
   ExamQuestion _pickRandomIntroOrCommit(
     Map<String, Section> secMap,
     Map<String, StepItem> stepMap,

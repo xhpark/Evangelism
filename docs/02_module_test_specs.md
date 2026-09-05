@@ -3,8 +3,8 @@
 **문서 버전:** v2.6
 **작성일:** 2026-09-05
 **테스트 프레임워크:** Flutter Test (`flutter test`)  
-**테스트 스위트 구성:** 총 15개 파일, 60개 단위/위젯 테스트 (100% 통과)
-**최종 실행 결과:** 2026-09-05 앱 `1.0.2+3` / `flutter test` → `+60: All tests passed!` / `flutter analyze` → `No issues found!` / release APK 실기기 검증 완료
+**테스트 스위트 구성:** 총 15개 파일, 61개 단위/위젯 테스트 (100% 통과)
+**최종 실행 결과:** 2026-09-05 앱 `1.0.2+3` / `flutter test` → `+61: All tests passed!` / `flutter analyze` → `No issues found!` / release APK 실기기 검증 완료
 
 ---
 
@@ -31,6 +31,7 @@
 | | TS-RAND-003 | `RandomExamEngine` | 실전시험에서 순수 성경 구절 제외 및 34문장 구성 검증 | PASS |
 | | TS-RAND-004 | `RandomExamEngine` | 즉석 양육 항목별 출제 검증 | PASS |
 | | TS-RAND-005 | `RandomExamEngine` | 실전시험 4대 영역별 세부 성적표 산출 검증 | PASS |
+| | TS-RAND-006 | `RandomExamEngine` | 성경 구절 암송 모드 예외적 성경 구절 출제 검증 | PASS |
 | `scoring_engine_test.dart` | TS-SCORE-001 | `ScoringEngine` | 100% 일치 발화 채점 (Myers Diff & 100점 산출) | PASS |
 | | TS-SCORE-002 | `ScoringEngine` | 핵심 키워드 누락 시 가중치 감점 및 Missing 마킹 | PASS |
 | | TS-SCORE-003 | `ScoringEngine` | 빈 문자열 발화 시 0점 및 전체 Missing 처리 | PASS |
@@ -80,7 +81,7 @@
 
 ## 3. 테스트 실행 명령어
 ```bash
-flutter test --coverage  # 60개 단위/위젯 테스트
+flutter test --coverage  # 61개 단위/위젯 테스트
 flutter analyze   # 정적 분석 (경고 0건 유지)
 node scripts/google_apps_script_backend.test.js  # 서버 통합 테스트
 dart run scripts/check_coverage.dart coverage/lcov.info 45  # 커버리지 하한

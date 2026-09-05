@@ -745,6 +745,32 @@ Apps Script 웹앱은 콜드 스타트 때 5초를 넘나든다. 기존 5초 제
 * **`flutter analyze`**: **경고 0건 (No issues found!)**
 * **`flutter test`**: **15개 파일 60개 전체 통과** (실측치 확인)
 
+---
+
+## 19. 2026-09-05 작업 기록 — 실전시험 성경 구절 암송 모드 복원 및 예외적 정확 암송 테스트 구현
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 19.1 요구사항 및 배경
+* **요구사항**: 실전시험의 연계/완주 모드(전환 연계, 서론/결신, 34문장 전체 완주)에서는 실제 1:1 전도 현장 특성에 맞춰 성경 구절 암송을 제외하는 원칙을 유지하되, **실전시험 내 "성경 구절 암송" 모드에서는 성경 구절을 토씨 하나 틀림없이 정확하게 암송하는지 테스트하는 것이 목적이므로 예외적으로 성경 구절 암송을 테스트**하도록 복원.
+* 실전 모의고사(`randomMix`)에서도 5개 카테고리(전환, 예화, 성경구절, 서론/결신, 양육)에서 골고루 무작위 출제되도록 성경 구절 암송 생성기 포함.
+
+### 19.2 수정 및 개선 내용
+1. **`ExamMode.scriptureChain` 모드 복원 (`lib/services/random_exam_engine.dart`)**:
+   - `ExamMode.scriptureChain('성경 구절 암송', '성경 구절 시작부를 제시하면 핵심 성경 구절 말씀 전문을 정확히 암송')` 정의 복원 (총 7대 모드 체제).
+   - `_pickRandomScripture`: 요일 5:13, 엡 2:8-9, 롬 3:23, 요일 4:8 & 출 34:7, 사 53:6, 행 16:31, 요 6:47 등 핵심 성경 구절 말씀 전문의 정확한 암송을 출제하도록 구현.
+   - `randomMix` 무작위 출제 풀에 `_pickRandomScripture` 포함.
+   - 기존의 `fullSequential`(34문장 완주) 및 `transitionChain` 등 다른 연계 모드에서는 성경 구절 제외 원칙 유지.
+2. **단위 테스트 추가 (`test/random_exam_engine_test.dart`)**:
+   - `TS-RAND-006: 성경 구절 암송 모드 예외적 성경 구절 출제 검증` 신규 작성 및 통과 확인.
+3. **문서 동기화**:
+   - `AGENTS.md`, `README.md`, `docs/01_detailed_design.md`, `docs/02_module_test_specs.md`, `docs/04_user_guide.md`, `docs/05_ai_handoff_log.md` 갱신 (실측 테스트 61개, 파일 15개).
+
+### 19.3 최종 검증 결과
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **15개 파일 61개 전체 통과** (실측치 확인)
+
+
 
 
 

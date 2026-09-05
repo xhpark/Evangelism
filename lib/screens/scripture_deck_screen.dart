@@ -17,6 +17,14 @@ class ScriptureDeckScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: Icon(
+              provider.isPlaying ? Icons.stop_circle : Icons.repeat,
+              color: provider.isPlaying ? AppTheme.accentGold : Colors.white,
+            ),
+            tooltip: provider.isPlaying ? "반복 재생 정지" : "전체 8구절 연속 반복 듣기",
+            onPressed: () => provider.togglePlayAllRepeat(),
+          ),
+          IconButton(
+            icon: Icon(
               provider.blankQuizMode
                   ? Icons.format_strikethrough
                   : Icons.quiz_outlined,
@@ -106,12 +114,19 @@ class ScriptureDeckScreen extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(
-                            Icons.volume_up,
-                            color: AppTheme.primaryBlue,
+                          icon: Icon(
+                            provider.isPlaying
+                                ? Icons.stop_circle_outlined
+                                : Icons.volume_up,
+                            color: provider.isPlaying
+                                ? AppTheme.accentRed
+                                : AppTheme.primaryBlue,
+                            size: 26,
                           ),
-                          onPressed: () => provider.speakCurrentVerse(),
-                          tooltip: "성경 구절 듣기",
+                          onPressed: () => provider.togglePlayAllRepeat(),
+                          tooltip: provider.isPlaying
+                              ? "전체 반복 재생 정지"
+                              : "전체 8구절 연속 반복 듣기",
                         ),
                       ],
                     ),
@@ -175,7 +190,40 @@ class ScriptureDeckScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            // 전체 8구절 연속 반복 듣기 컨트롤 버튼
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () => provider.togglePlayAllRepeat(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: provider.isPlaying
+                      ? AppTheme.accentRed
+                      : AppTheme.primaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: Icon(
+                  provider.isPlaying ? Icons.stop : Icons.repeat,
+                  size: 20,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  provider.isPlaying
+                      ? "전체 반복 듣기 정지 (현재 ${provider.currentIndex + 1}/${provider.cards.length}구절)"
+                      : "전체 8구절 연속 반복 듣기",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // 하단 버튼 바 (한 줄 줄바꿈 방지 및 최적화된 패딩)
             Row(

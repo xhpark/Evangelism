@@ -34,7 +34,7 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
-          Provider<ScriptRepository>.value(value: repository),
+          ChangeNotifierProvider<ScriptRepository>.value(value: repository),
           ChangeNotifierProvider<LicenseService>.value(value: licenseService),
           ChangeNotifierProvider(create: (_) => StudyProvider(repository)),
           ChangeNotifierProvider(

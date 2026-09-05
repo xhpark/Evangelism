@@ -136,9 +136,9 @@ class _QuickTriggerTabView extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: provider.difficulty.durationSeconds > 0
+              value: provider.currentTimeoutSeconds > 0
                   ? (provider.remainingSeconds /
-                        provider.difficulty.durationSeconds)
+                        provider.currentTimeoutSeconds)
                   : 0.0,
               minHeight: 10,
               backgroundColor: Colors.grey.shade200,
@@ -192,17 +192,18 @@ class _QuickTriggerTabView extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
 
-                  // 문제 선두 단어 (고급=3단어, 중급=4단어, 초급=5단어)
+                  // 문제 제시 텍스트 (고급=앞뒤 3단어, 중급=앞뒤 4단어, 초급=앞뒤 5단어)
                   Text(
-                    QuickTriggerEngine.extractLeadIn(
+                    QuickTriggerEngine.extractPrompt(
                       card.effectiveScript,
                       difficulty: provider.difficulty,
                     ),
                     style: const TextStyle(
-                      fontSize: 21,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       color: AppTheme.primaryNavy,
                       letterSpacing: -0.5,
+                      height: 1.45,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -465,7 +466,7 @@ class _QuickTriggerTabView extends StatelessWidget {
                 onPressed: () => provider.startTimerAndSTT(),
                 icon: const Icon(Icons.mic),
                 label: Text(
-                  "${provider.difficulty.durationSeconds.toStringAsFixed(0)}초 순발력 테스트 & 음성 인식 시작",
+                  "${provider.currentTimeoutSeconds.toStringAsFixed(1)}초 순발력 테스트 & 음성 인식 시작",
                   style: const TextStyle(fontSize: 15),
                 ),
               ),

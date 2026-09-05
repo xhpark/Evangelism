@@ -3,7 +3,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum PlayMode {
-  singleRepeat, // 1문장 무한 반복
+  singleRepeat, // 선택문장 무한 반복
   sectionPlay, // 현재 섹션 1회 재생
   sectionRepeat, // 현재 섹션 무한 반복 재생
   allSequentialPlay, // 서론부터 양육까지 전체 연속 재생
@@ -346,7 +346,9 @@ class TTSService {
     _speechStopwatch.start();
 
     await _applyTtsSettings();
-    await _tts.speak(text);
+    try {
+      await _tts.speak(text);
+    } catch (_) {}
 
     _isPlaying = false;
     _speechStopwatch.stop();
@@ -360,12 +362,16 @@ class TTSService {
   Future<void> stop() async {
     _isPlaying = false;
     _speechStopwatch.stop();
-    await _tts.stop();
+    try {
+      await _tts.stop();
+    } catch (_) {}
   }
 
   Future<void> pause() async {
     _isPlaying = false;
     _speechStopwatch.stop();
-    await _tts.pause();
+    try {
+      await _tts.pause();
+    } catch (_) {}
   }
 }

@@ -24,8 +24,17 @@ class VoiceExamProvider extends ChangeNotifier {
   bool _isScoring = false;
   String? _sttError;
 
+  bool _isDisposed = false;
+
   VoiceExamProvider(this._repository) {
+    _repository.addListener(_onRepositoryChanged);
     _init();
+  }
+
+  void _onRepositoryChanged() {
+    if (!_isListening && !_isScoring) {
+      generateNewQuestion();
+    }
   }
 
   ExamMode get selectedMode => _selectedMode;
@@ -67,12 +76,14 @@ class VoiceExamProvider extends ChangeNotifier {
 
   /// 시험 문제 출제 생성
   Future<void> generateNewQuestion() async {
+    if (_isDisposed) return;
     _isLoading = true;
     _lastResult = null;
     _liveSpokenText = '';
     notifyListeners();
 
     final sections = await _repository.loadSections();
+    if (_isDisposed) return;
     _currentQuestion = _examEngine.generateQuestion(_selectedMode, sections);
 
     _isLoading = false;
@@ -178,5 +189,13 @@ class VoiceExamProvider extends ChangeNotifier {
     _liveSpokenText = '';
     _lastResult = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _repository.removeListener(_onRepositoryChanged);
+    _stt.cancel();
+    super.dispose();
   }
 }

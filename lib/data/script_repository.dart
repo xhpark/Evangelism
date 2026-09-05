@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/section_model.dart';
 import '../models/exam_result_model.dart';
 
-class ScriptRepository {
+class ScriptRepository extends ChangeNotifier {
   static const String _customScriptsKey = 'just_ee_custom_scripts_v1';
   static const String _userTestimonyKey = 'just_ee_user_testimony';
   static const String _userChurchKey = 'just_ee_user_church';
@@ -64,6 +65,7 @@ class ScriptRepository {
     await prefs.setString(_customScriptsKey, json.encode(customMap));
     _cachedSections = null; // 캐시 무효화
     await loadSections();
+    notifyListeners();
   }
 
   Future<Map<String, String>> _getCustomScriptsMap() async {
@@ -96,6 +98,7 @@ class ScriptRepository {
     await prefs.setString(_userChurchKey, churchName);
     _cachedSections = null;
     await loadSections();
+    notifyListeners();
   }
 
   Future<String> getUserChurch() async {
@@ -391,6 +394,7 @@ class ScriptRepository {
     await prefs.setString(_customScriptsKey, json.encode(customScripts));
     _cachedSections = null;
     await loadSections();
+    notifyListeners();
     return true;
   }
 
@@ -405,6 +409,7 @@ class ScriptRepository {
       await prefs.remove(_importBackupKey);
       _cachedSections = null;
       await loadSections();
+      notifyListeners();
       return true;
     } catch (_) {
       return false;

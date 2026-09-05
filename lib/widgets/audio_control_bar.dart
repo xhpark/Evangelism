@@ -134,7 +134,7 @@ class AudioControlBar extends StatelessWidget {
                         children: [
                           Icon(Icons.repeat_one, size: 18),
                           SizedBox(width: 8),
-                          Text("1문장 무한 반복"),
+                          Text("선택문장 무한 반복"),
                         ],
                       ),
                     ),
@@ -176,7 +176,7 @@ class AudioControlBar extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           study.playMode == PlayMode.singleRepeat
-                              ? "1문장 반복"
+                              ? "선택문장 반복"
                               : study.playMode == PlayMode.sectionRepeat
                               ? "챕터 무한반복"
                               : study.playMode == PlayMode.allSequentialPlay

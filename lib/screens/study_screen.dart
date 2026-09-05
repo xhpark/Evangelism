@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/study_provider.dart';
-import '../providers/quick_trigger_provider.dart';
-import '../providers/voice_exam_provider.dart';
 import '../widgets/audio_control_bar.dart';
 import '../widgets/sentence_card.dart';
 import '../widgets/hand_outline_widget.dart';
@@ -294,14 +292,6 @@ class _StudyScreenState extends State<StudyScreen> {
                           },
                           onEdit: (newText) async {
                             await study.updateStepScript(step.stepId, newText);
-                            if (!context.mounted) return;
-                            await context
-                                .read<QuickTriggerProvider>()
-                                .refreshFromRepository();
-                            if (!context.mounted) return;
-                            await context
-                                .read<VoiceExamProvider>()
-                                .generateNewQuestion();
                           },
                         ),
                       );

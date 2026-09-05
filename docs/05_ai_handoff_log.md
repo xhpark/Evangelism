@@ -435,3 +435,212 @@ Apps Script 웹앱은 콜드 스타트 때 5초를 넘나든다. 기존 5초 제
 * **URL 누락 빌드 차단 검증**: `flutter build apk --release` 단독 실행 시 Gradle에서 즉시 빌드 차단 확인.
 * **파이프라인 빌드 검증**: `scripts/build_release_apk.ps1` 실행 완료 (55.92 MB, SHA-256 해시 정상 생성 확인).
 * **실기기 설치**: 의뢰인 지침에 따라 추후 USB 연결 후 별도 진행 예정.
+
+---
+
+## 10. 2026-09-05 작업 기록 — 실기기 수정 대본 전수 점검 및 프로젝트 원본 반영
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 10.1 작업 배경 및 실기기 전수 점검
+* 의뢰인이 스마트폰(Galaxy S24 Ultra)의 학습/청취 화면에서 직접 수정한 대본 내역을 프로젝트 원본(`data/just_ee_data.json`)에 반영 요청.
+* UI 덤프 및 스크롤 자동화 스캔을 통해 8개 섹션 총 40개 전체 문장을 100% 전수 비교 점검하여 실제 변경된 5개 문장을 누락 없이 특정.
+
+### 10.2 수정 반영 내역 (`data/just_ee_data.json`)
+1. **`intro_2` (서론 - 영생의 정의/개인 간증)**:
+   * "혼자서 어둠 속에서 살았습니다" ➔ "항상 죽음의 공포 가운데에서 살았습니다"
+   * "영생을 얻은 후에는 많은 사람들과 함께 행복하게 살게 되었습니다" ➔ "영생을 얻은 후에 저는 영생의 참된 기쁨을 누리며 살고 있지요"
+2. **`intro_5` (서론 - 성경 기록 목적/팀원 확신 확인)**:
+   * 호칭 변경: "황 집사님", "전도사님" ➔ "김 집사님", "이 권사님"
+3. **`intro_6` (서론 - 제2 진단 질문/복음 제시 허락)**:
+   * "선생님은 선한 행위 때문이란 말씀이시죠? 제가 선생님의 대답을 바로 이해했나요?" ➔ "선생님의 대답은 선한 행위 때문이란 말씀이시죠? 제가 선생님의 말씀을 바로 이해했나요?"
+4. **`grace_3` (은혜 - 선물 예화)**:
+   * "하나님이 우리에게" ➔ "하나님께서 우리에게"
+5. **`commit_5` (결신 - 구원의 확신 문답 요한복음 6:47)**:
+   * 예시 이름 변경: "박상환" ➔ "김한국"
+
+### 10.3 빌드 보류 및 무결성 검증
+* **릴리즈 빌드 보류**: 의뢰인 지침("다른 수정이 있으니 새 릴리즈 APK 빌드는 보류해라")에 따라 새 릴리즈 APK 빌드는 실행하지 않고 보류.
+* `flutter analyze` ➔ **경고 0건 (No issues found!)**
+* `flutter test` ➔ **14개 파일 48개 전체 통과**
+
+---
+
+## 11. 2026-09-05 작업 기록 — 대본 수정 실시간 양방향 자동 동기화(SSOT) 아키텍처 구축
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 11.1 문제 배경 및 원인
+* **문제**: 학습/청취 화면(`StudyScreen`)에서 문장을 수정해도 설정 화면(`SettingsScreen`)의 대본 목록에 즉시 반영되지 않아, 앱 내에 서로 다른 두 버전이 존재하는 것처럼 불일치가 발생.
+* **원인**: `ScriptRepository`가 단순 데이터 클래스로 남아있어 변경 이벤트를 발행하지 못했고, `StudyProvider`와 `ScriptManageProvider`가 각자의 메모리 캐시를 유지하며 UI 콜백에서 수동으로만 타 Provider를 갱신하던 분산 상태 관리의 취약성.
+
+### 11.2 아키텍처 개선 내용
+1. **단일 진실 공급원(SSOT) 및 반응형 발행자 구축**:
+   * `ScriptRepository`가 `ChangeNotifier`를 확장하여 대본 변경(`updateStepScript`, `saveUserTestimony`, `saveUserChurch`, `importFromPlainText`, `undoLastImport`) 완료 시 `notifyListeners()` 자동 발행.
+   * `main.dart` 및 테스트에서 `ChangeNotifierProvider<ScriptRepository>.value`로 공식 등록.
+2. **Provider 레이어 자동 구독 (Pub-Sub)**:
+   * `StudyProvider`: 저장소 변경 감지 시 `refresh()` 자동 실행 (카드/음성 실시간 동기화).
+   * `ScriptManageProvider`: 저장소 변경 감지 시 `loadData(showLoading: false)` 자동 실행 (설정 대본/간증 실시간 동기화).
+   * `QuickTriggerProvider`: 저장소 변경 감지 시 안전한 조건에서 `refreshFromRepository()` 자동 실행.
+   * `VoiceExamProvider`: 저장소 변경 감지 시 안전한 조건에서 `generateNewQuestion()` 자동 실행.
+   * 모든 Provider에 `_isDisposed` 가드를 적용하여 비동기 라이프사이클 누수 원천 차단.
+3. **UI 레이어 의존성 분리**:
+   * `StudyScreen`의 `onEdit` 콜백에서 타 Provider를 수동 호출하던 취약 코드를 제거하고 저장소 기반 단일 호출로 통합. 어느 화면에서 수정하든 전체 화면이 100% 동일한 시점에 자동 동기화됨.
+
+### 11.3 검증 결과
+* **신규 양방향 동기화 테스트**: `test/script_edit_propagation_test.dart`
+  - `TS-EDIT-001`: 학습(StudyProvider) 수정 시 설정(ScriptManageProvider) 실시간 자동 반영 검증 통과.
+  - `TS-EDIT-002`: 설정(ScriptManageProvider) 수정 시 학습(StudyProvider) 실시간 자동 반영 검증 통과.
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **14개 파일 49개 전체 통과** (기존 48개 + 신규 1개)
+
+---
+
+## 12. 2026-09-05 작업 기록 — 학습/청취 "선택문장 무한 반복" 모드 개선 및 무한 반복 정상화
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 12.1 문제 배경 및 원인
+* **문제**:
+  1. 학습/청취 화면의 재생 모드 중 "1문장 무한 반복" 모드가 정상 동작하지 않음. 문장 카드를 직접 탭하여 재생하면 단 1회만 읽고 멈춤.
+  2. 하단 컨트롤 바의 "연속 듣기" 버튼을 누르면 현재 선택된 문장이 아닌 챕터 맨 첫 문장(0번)부터 반복이 시작됨.
+  3. 명칭이 "1문장 무한 반복"으로 되어 있어 사용자가 선택한 문장을 반복한다는 의도가 직관적으로 드러나지 않음.
+* **원인**:
+  1. `StudyProvider.playStep()`이 호출될 때 무조건 `_isContinuousPlaying = false`로 고정하고 TTS 단발 재생 후 종료되었음.
+  2. `StudyProvider.playContinuous()`의 시작 인덱스 기본값이 `fromIndex ?? 0`으로 하드코딩되어 있어, 사용자가 선택한 문장 정보(`_selectedStepId`)가 하단 재생 버튼과 연결되지 못했음.
+  3. 배속 변경(`setSpeedRate()`) 시 무한 반복 중임에도 다음 문장(`nextIdx`)으로 진행되는 취약점 존재.
+
+### 12.2 수정 및 개선 내용
+1. **명칭 및 UI 텍스트 변경**:
+   * `PlayMode.singleRepeat` 명칭: "1문장 무한 반복" ➔ **"선택문장 무한 반복"**
+   * 재생 컨트롤 바 배지: **"선택문장 반복"**
+   * 사용자 가이드 및 문서(`README.md`, `docs/04_user_guide.md`) 4대 재생 모드 설명 동기화.
+2. **`StudyProvider` 상태 및 재생 루프 개선**:
+   * `_selectedStepId` 필드 및 getter 추가: 사용자가 문장 카드를 탭하거나 챕터 진입 시 선택된 문장을 항상 최신으로 추적.
+   * `playStep()`:
+     - `_playMode == PlayMode.singleRepeat`일 때 단발 재생 대신 `playContinuous(fromIndex: curIdx)`를 직접 실행하여 선택 문장의 무한 루프로 즉시 진입.
+     - 이미 무한 반복 중인 문장을 다시 탭하면 재생 정지(토글 동작).
+   * `playContinuous()`:
+     - `startIndex`를 `fromIndex ?? _selectedStepId ?? _activeStepId ?? 0` 순으로 계산하여, 하단 연속 듣기 버튼을 누를 때도 현재 선택/활성화된 문장부터 무한 반복 시작.
+   * `setSpeedRate()`:
+     - `_playMode == PlayMode.singleRepeat` 재생 중 배속 변경 시 다음 문장으로 넘어가지 않고 현재 선택 문장 무한 반복 유지.
+3. **TTSService 테스트 내구성 보강**:
+   * `lib/services/tts_service.dart`: `stop()`, `pause()`, `speak()`에 `try ... catch (_)` 가드를 두어 테스트/비네이티브 환경에서 `MissingPluginException` 발생 시 안전 무시 처리.
+
+### 12.3 검증 결과
+* **신규 단위 테스트**: `test/playback_sequence_test.dart`
+  - `TS-PLAY-003`: 선택문장 무한 반복(`singleRepeat`) 모드에서 문장 선택 시 해당 문장 타깃 지정 및 무한 반복 유지 검증 통과.
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **14개 파일 50개 전체 통과** (기존 49개 + 신규 1개)
+* **릴리즈 빌드 보류 준수**: 사용자 요청에 따라 새 릴리즈 APK 빌드는 보류 상태 유지.
+
+---
+
+## 13. 2026-09-05 작업 기록 — 순발력/전환 트레이닝 문장 낭독 소요시간 기반 동적 타임아웃(1.0x / 1.2x / 1.5x) 구현
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 13.1 문제 배경 및 원인
+* **문제**: 순발력/전환 문장 트레이닝 탭에서 타임아웃 시간이 초급 3.0초, 중급 2.0초, 고급 1.0초로 고정되어 있어, 긴 문장은 물론 일반 문장에서도 발화를 채 마치기 전에 타임오버가 발생하는 심각한 제약 발생.
+* **원인**: 문장 길이(음절 수 및 구두점 휴지기)와 무관하게 고정 초(`TriggerDifficulty.durationSeconds`)가 적용되어 있었고, 발화 제한 시간 `limit` 및 카운트다운 타이머가 고정값에 종속되어 있었음.
+
+### 13.2 수정 및 개선 내용
+1. **문장 낭독 소요시간 계산 엔진 구축 (`QuickTriggerEngine.calculateReadingDuration`)**:
+   * 한국어 표준 TTS 낭독 속도(1.0x 기준 초당 5.0음절, `TTSService` 기준과 통일) 기반 음절 소요시간 산출.
+   * 쉼표(0.25초) 및 문장부호(마침표/물음표 등 0.40초) 휴지기 가산.
+   * 난이도별 배속 반영 (`초급: 1.0x`, `중급: 1.2x`, `고급: 1.5x`), 최소 2.0초 보장.
+   * `QuickTriggerEngine.getTimeoutForStep(step, difficulty)` 추가로 카드별 대본(`effectiveScript`)에 맞는 동적 타임아웃 산출.
+2. **`TriggerDifficulty` 난이도 정의 갱신**:
+   * `beginner(1.0, '초급 (5단어 / 1.0x)')`, `intermediate(1.2, '중급 (4단어 / 1.2x)')`, `master(1.5, '고급 마스터 (3단어 / 1.5x)')`
+   * `speedRate` 프로퍼티 추가 및 기존 호환성용 `durationSeconds` getter 유지.
+3. **Provider 및 UI 동적 연동 (`QuickTriggerProvider` & `QuickTriggerScreen`)**:
+   * `currentTimeoutSeconds` getter 추가: 현재 출제 카드 및 선택 난이도 배속에 따라 즉시 동적 계산.
+   * `initDeck()`, `setDifficulty()`, `startTimerAndSTT()`, `abortListening()`, `nextCard()`에서 고정 초 대신 `currentTimeoutSeconds`를 기준으로 타이머/진행률/잔여시간 설정.
+   * `finishAndScore()`의 순발력 점수 제한 시간(`limit`)을 동적 타임아웃과 100% 일치시켜, 긴 문장도 정상 속도 내 발화 시 고득점(70~100점) 획득 가능.
+   * UI 프로그레스 바 및 하단 시작 버튼에 동적 초("${currentTimeoutSeconds}초") 실시간 반영.
+4. **문서 동기화**:
+   * `README.md`, `docs/04_user_guide.md`, `AGENTS.md`(실측 테스트 52개) 갱신.
+
+### 13.3 검증 결과
+* **신규 단위 테스트**: `test/quick_trigger_engine_test.dart`
+  - `TS-TRIG-003`: 난이도별 배속(1.0x, 1.2x, 1.5x) 및 프리셋 호환성 검증 통과.
+  - `TS-TRIG-004`: 1.0x/1.2x/1.5x 문장 낭독 소요 시간 기반 동적 타임아웃 계산 검증 통과 (초급 > 중급 > 고급 비례).
+  - `TS-TRIG-005`: 최소 시간(2.0초) 보장 및 빈 스크립트 기본 시간 검증 통과.
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **14개 파일 52개 전체 통과** (기존 50개 + 신규 2개)
+* **릴리즈 빌드 보류 준수**: 사용자 요청에 따라 새 릴리즈 APK 빌드는 보류 상태 유지.
+
+---
+
+## 14. 2026-09-05 작업 기록 — 성경덱 핵심 8구절 전체 무한 연속 반복 재생 기능 구현
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 14.1 문제 배경 및 원인
+* **문제**: 성경덱 화면(`ScriptureDeckScreen`)에서 스피커 아이콘을 누르면 현재 보이는 단일 구절만 1회 읽어주고 정지되어, 8대 핵심 성경 구절 전체를 연속해서 반복 학습할 수 없었음.
+* **원인**: `ScriptureProvider.speakCurrentVerse()`가 단일 구절 재생(`_tts.speak`)만 단발성으로 호출하고, 전체 덱을 순회하는 반복 세션 관리 및 루프 제어 로직이 부재했음.
+
+### 14.2 수정 및 개선 내용
+1. **`ScriptureProvider` 연속 반복 루프 및 세션 제어 구축**:
+   * `playAllRepeat({int? fromIndex})`:
+     - 지정된 구절(또는 현재 선택 구절)부터 8번 구절까지 순서대로 TTS 낭독 후, 다시 1번 구절로 돌아가 무한 반복 재생.
+     - 매 구절 낭독 시 `_currentIndex` 및 `notifyListeners()`를 호출하여 UI 카드와 상단 ChoiceChip이 음성과 1:1로 실시간 동기화 전환.
+     - 각 구절 사이에 600ms의 호흡 여유 휴지기 부여.
+     - `_playbackSessionId`와 `_isDisposed` 가드를 통해 안전한 세션 취소 및 정지 보장.
+     - 음성 낭독 중 화면 꺼짐 방지(`DeviceHelperService.enableKeepScreenOn()`) 연동.
+   * `stopAudio()`: 재생 중단 및 리소스 안전 해제.
+   * `togglePlayAllRepeat()`: 재생/정지 토글 동작.
+   * `speakCurrentVerse()`: 스피커 터치 시 `togglePlayAllRepeat()`로 직결하여 전체 반복 재생 즉시 시작/정지.
+   * `selectCard()`, `nextCard()`, `prevCard()`: 재생 도중 구절 전환 시 해당 구절부터 매끄럽게 연속 재생 유지.
+2. **`ScriptureDeckScreen` UI 고도화**:
+   * 성경 카드 우측 상단 스피커 아이콘: 재생 중일 때 `Icons.stop_circle_outlined`(빨간색)로 변경되며 토글 정지 지원.
+   * 카드 하단에 전용 컨트롤 버튼 배치: `[전체 8구절 연속 반복 듣기]` ➔ 재생 중일 때 `[전체 반복 듣기 정지 (현재 n/8구절)]`.
+   * AppBar actions에도 `[반복/정지]` 액션 아이콘 추가.
+3. **신규 단위 테스트 추가**:
+   * `test/scripture_deck_test.dart` (신규 3개 테스트 통과)
+     - `TS-SCRIP-001`: 8대 핵심 성경 구절 데이터 무결성 검증.
+     - `TS-SCRIP-002`: `ScriptureProvider` 전체 덱 반복 재생 및 정지 세션 제어 검증.
+     - `TS-SCRIP-003`: 구절 이동 및 빈칸 퀴즈 모드 토글 검증.
+4. **문서 동기화**:
+   * `README.md`, `docs/04_user_guide.md`, `AGENTS.md`(실측 테스트 55개, 파일 15개) 갱신.
+
+### 14.3 검증 결과
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **15개 파일 55개 전체 통과** (기존 52개 + 신규 3개)
+* **릴리즈 빌드 보류 준수**: 사용자 요청에 따라 새 릴리즈 APK 빌드는 보류 상태 유지.
+
+---
+
+## 15. 2026-09-05 작업 기록 — 순발력/전환 트레이닝 시작 단어 및 종료 단어(5, 4, 3단어) 동시 제시 구현
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 15.1 문제 배경 및 원인
+* **문제**: 순발력/전환 트레이닝 카드에서 문장의 첫 부분만 보여주고 있어, 사용자가 어디까지 암송을 완주해야 하는지(어디서 멈추어야 하는지) 종착점을 알기 어려웠음.
+* **요구사항**: 초급, 중급, 고급 난이도에 따라 시작 단어뿐만 아니라 마지막 단어도 각각 5, 4, 3단어를 동시에 보여주도록 개선.
+
+### 15.2 수정 및 개선 내용
+1. **양방향 프롬프트 추출 알고리즘 (`QuickTriggerEngine.extractPrompt`) 구현**:
+   * 난이도별 단어 수: `초급: 5단어`, `중급: 4단어`, `고급 마스터: 3단어`
+   * 문장의 시작 `count`개 단어와 마지막 `count`개 단어를 추출하여 `"{시작 단어들} ... {끝 단어들}"` 형태로 결합.
+   * 단어 수가 적은 문장에서도 시작 단어와 끝 단어가 중복되지 않도록 잔여 단어 수(`availableTail`) 기반 안전 경계 클램핑 적용.
+   * 기존 실전시험(`RandomExamEngine`) 호환성을 위해 `extractLeadIn`도 안전하게 유지.
+2. **화면 렌더링 반영 (`QuickTriggerScreen`)**:
+   * 메인 문제 카드에서 `extractLeadIn` 대신 `extractPrompt`를 적용하여 사용자가 시작점과 종착점을 한눈에 보고 암송 가능.
+   * 가독성을 고려하여 `height: 1.45` 줄간격 적용.
+3. **신규 단위 테스트 추가**:
+   * `test/quick_trigger_engine_test.dart`에 `TS-TRIG-006` 추가 (초급 앞뒤 5단어, 중급 앞뒤 4단어, 고급 앞뒤 3단어 및 단문 예외 분기 검증 완료).
+4. **문서 동기화**:
+   * `README.md`, `docs/04_user_guide.md`, `AGENTS.md`(실측 테스트 56개, 파일 15개) 갱신.
+
+### 15.3 검증 결과
+* **신규 단위 테스트**: `test/quick_trigger_engine_test.dart`
+  - `TS-TRIG-006`: 시작/끝 단어(초급 5단어, 중급 4단어, 고급 3단어) 동시 노출 프롬프트 검증 통과.
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **15개 파일 56개 전체 통과** (기존 55개 + 신규 1개)
+* **릴리즈 빌드 보류 준수**: 사용자 요청에 따라 새 릴리즈 APK 빌드는 보류 상태 유지.
+
+
+
+
+

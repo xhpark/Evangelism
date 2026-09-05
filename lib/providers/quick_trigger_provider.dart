@@ -33,7 +33,19 @@ class QuickTriggerProvider extends ChangeNotifier {
   String? _sttError;
   bool _isScoring = false;
 
-  QuickTriggerProvider(this._repository);
+  bool _isDisposed = false;
+
+  QuickTriggerProvider(this._repository) {
+    _repository.addListener(_onRepositoryChanged);
+  }
+
+  void _onRepositoryChanged() {
+    if (_cardState != TriggerCardState.countdown &&
+        !_isListening &&
+        !_isScoring) {
+      refreshFromRepository();
+    }
+  }
 
   List<StepItem> get deck => _deck;
   List<Section> get sections => _sections;
@@ -57,6 +69,13 @@ class QuickTriggerProvider extends ChangeNotifier {
   ExamResult? get evalResult => _evalResult;
   bool get isScoring => _isScoring;
 
+  /// 현재 출제 카드 및 난이도(배속) 기준 동적 타임아웃 시간(초)
+  double get currentTimeoutSeconds {
+    final card = currentCard;
+    if (card == null) return _difficulty.durationSeconds;
+    return QuickTriggerEngine.getTimeoutForStep(card, _difficulty);
+  }
+
   /// 마이크/음성 인식 실패 사유 (없으면 null)
   String? get sttError => _sttError;
 
@@ -77,11 +96,12 @@ class QuickTriggerProvider extends ChangeNotifier {
     );
     _currentIndex = 0;
     _cardState = TriggerCardState.ready;
-    _remainingSeconds = _difficulty.durationSeconds;
+    _remainingSeconds = currentTimeoutSeconds;
     _spokenText = '';
     _speedScore = 0.0;
     _accuracyScore = 0.0;
     _evalResult = null;
+    if (_isDisposed) return;
     notifyListeners();
   }
 
@@ -93,7 +113,9 @@ class QuickTriggerProvider extends ChangeNotifier {
 
   void setDifficulty(TriggerDifficulty diff) {
     _difficulty = diff;
-    _remainingSeconds = diff.durationSeconds;
+    if (_cardState == TriggerCardState.ready) {
+      _remainingSeconds = currentTimeoutSeconds;
+    }
     notifyListeners();
   }
 
@@ -112,7 +134,8 @@ class QuickTriggerProvider extends ChangeNotifier {
     _evalResult = null;
     _sttError = null;
     _cardState = TriggerCardState.countdown;
-    _remainingSeconds = _difficulty.durationSeconds;
+    final totalDuration = currentTimeoutSeconds;
+    _remainingSeconds = totalDuration;
     _isListening = true;
     notifyListeners();
 
@@ -151,15 +174,15 @@ class QuickTriggerProvider extends ChangeNotifier {
     }
 
     const tickMs = 100;
-    final totalTicks = (_difficulty.durationSeconds * 1000 / tickMs).round();
+    final totalTicks = (totalDuration * 1000 / tickMs).round();
     int currentTick = 0;
 
     _timer = Timer.periodic(const Duration(milliseconds: tickMs), (t) {
       currentTick++;
       _remainingSeconds =
-          (_difficulty.durationSeconds - (currentTick * tickMs / 1000)).clamp(
+          (totalDuration - (currentTick * tickMs / 1000)).clamp(
             0.0,
-            _difficulty.durationSeconds,
+            totalDuration,
           );
 
       if (currentTick >= totalTicks) {
@@ -187,7 +210,7 @@ class QuickTriggerProvider extends ChangeNotifier {
     _isListening = false;
     await _stt.cancel();
     _cardState = TriggerCardState.ready;
-    _remainingSeconds = _difficulty.durationSeconds;
+    _remainingSeconds = currentTimeoutSeconds;
     notifyListeners();
   }
 
@@ -206,7 +229,7 @@ class QuickTriggerProvider extends ChangeNotifier {
     if (card == null) return;
 
     // 1. 순발력 점수 산출 (시간 내 반응 속도 기준)
-    final limit = _difficulty.durationSeconds;
+    final limit = currentTimeoutSeconds;
     final reaction = (_reactionTimeSeconds > 0.0)
         ? _reactionTimeSeconds
         : (_reactionStopwatch.elapsedMilliseconds / 1000.0);
@@ -265,7 +288,7 @@ class QuickTriggerProvider extends ChangeNotifier {
     if (_currentIndex + 1 < _deck.length) {
       _currentIndex++;
       _cardState = TriggerCardState.ready;
-      _remainingSeconds = _difficulty.durationSeconds;
+      _remainingSeconds = currentTimeoutSeconds;
     } else {
       // 전체 카드 완주 후 재셔플
       await initDeck(onlyTransitions: _onlyTransitions);
@@ -275,6 +298,8 @@ class QuickTriggerProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
+    _repository.removeListener(_onRepositoryChanged);
     _timer?.cancel();
     _reactionStopwatch.stop();
     _stt.cancel();

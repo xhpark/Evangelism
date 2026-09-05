@@ -13,6 +13,7 @@ class StudyProvider extends ChangeNotifier {
   List<Section> _sections = [];
   int _selectedSectionIndex = 0;
   String? _activeStepId;
+  String? _selectedStepId;
   bool _blindMode = false;
   double _speedRate = 1.0;
   PlayMode _playMode = PlayMode.sectionRepeat; // 기본: 현재 챕터 무한 반복
@@ -22,7 +23,12 @@ class StudyProvider extends ChangeNotifier {
   int _playbackSessionId = 0;
 
   StudyProvider(this._repository) {
+    _repository.addListener(_onRepositoryChanged);
     _init();
+  }
+
+  void _onRepositoryChanged() {
+    refresh();
   }
 
   List<Section> get sections => _sections;
@@ -30,6 +36,7 @@ class StudyProvider extends ChangeNotifier {
   Section? get currentSection =>
       _sections.isNotEmpty ? _sections[_selectedSectionIndex] : null;
   String? get activeStepId => _activeStepId;
+  String? get selectedStepId => _selectedStepId;
   bool get blindMode => _blindMode;
   double get speedRate => _speedRate;
   PlayMode get playMode => _playMode;
@@ -75,6 +82,10 @@ class StudyProvider extends ChangeNotifier {
       notifyListeners();
     };
 
+    if (_sections.isNotEmpty && _sections[0].steps.isNotEmpty) {
+      _selectedStepId = _sections[0].steps[0].stepId;
+    }
+
     _isLoading = false;
     notifyListeners();
   }
@@ -84,6 +95,9 @@ class StudyProvider extends ChangeNotifier {
       stopAudio();
       _selectedSectionIndex = index;
       _activeStepId = null;
+      _selectedStepId = _sections[index].steps.isNotEmpty
+          ? _sections[index].steps.first.stepId
+          : null;
       notifyListeners();
     }
   }
@@ -140,7 +154,9 @@ class StudyProvider extends ChangeNotifier {
           if (remaining.isNotEmpty && remaining.length > 1) {
             playContinuous(fromIndex: curIdx, initialText: remaining);
           } else {
-            if (curIdx + 1 < steps.length) {
+            if (_playMode == PlayMode.singleRepeat) {
+              playContinuous(fromIndex: curIdx);
+            } else if (curIdx + 1 < steps.length) {
               playContinuous(fromIndex: curIdx + 1);
             }
           }
@@ -162,8 +178,28 @@ class StudyProvider extends ChangeNotifier {
     }
   }
 
-  /// 특정 스텝 단일 재생
+  /// 특정 스텝 단일/반복 재생
   Future<void> playStep(StepItem step, {String? initialText}) async {
+    _selectedStepId = step.stepId;
+
+    if (_playMode == PlayMode.singleRepeat) {
+      // 선택문장 무한 반복 모드
+      // 이미 해당 선택 문장이 반복 재생 중인 경우 정지 토글
+      if (_isContinuousPlaying && _activeStepId == step.stepId) {
+        await stopAudio();
+        return;
+      }
+
+      final steps = currentSection?.steps ?? [];
+      final curIdx = steps.indexWhere((s) => s.stepId == step.stepId);
+      await playContinuous(
+        fromIndex: curIdx >= 0 ? curIdx : 0,
+        initialText: initialText,
+      );
+      return;
+    }
+
+    // 다른 모드일 때는 해당 문장 1회 듣기
     _isContinuousPlaying = false;
     _playbackSessionId++;
     final currentSession = _playbackSessionId;
@@ -183,8 +219,22 @@ class StudyProvider extends ChangeNotifier {
   }
 
   /// 4대 재생 모드 실행
-  Future<void> playContinuous({int fromIndex = 0, String? initialText}) async {
+  Future<void> playContinuous({int? fromIndex, String? initialText}) async {
     if (_sections.isEmpty) return;
+
+    final steps = currentSection?.steps ?? [];
+    int startIndex;
+    if (fromIndex != null) {
+      startIndex = fromIndex;
+    } else if (_selectedStepId != null) {
+      final idx = steps.indexWhere((s) => s.stepId == _selectedStepId);
+      startIndex = idx >= 0 ? idx : 0;
+    } else if (_activeStepId != null) {
+      final idx = steps.indexWhere((s) => s.stepId == _activeStepId);
+      startIndex = idx >= 0 ? idx : 0;
+    } else {
+      startIndex = 0;
+    }
 
     _isContinuousPlaying = true;
     _playbackSessionId++;
@@ -192,16 +242,16 @@ class StudyProvider extends ChangeNotifier {
 
     await DeviceHelperService.enableKeepScreenOn();
 
-    // 1. [1문장 무한 반복 모드]
+    // 1. [선택문장 무한 반복 모드]
     if (_playMode == PlayMode.singleRepeat) {
-      final steps = currentSection?.steps ?? [];
-      final curStep = (steps.isNotEmpty && fromIndex < steps.length)
-          ? steps[fromIndex]
+      final curStep = (steps.isNotEmpty && startIndex >= 0 && startIndex < steps.length)
+          ? steps[startIndex]
           : (steps.firstWhere(
-              (s) => s.stepId == _activeStepId,
+              (s) => s.stepId == _selectedStepId || s.stepId == _activeStepId,
               orElse: () => steps.first,
             ));
 
+      _selectedStepId = curStep.stepId;
       bool isFirst = true;
       while (_isContinuousPlaying &&
           _playbackSessionId == currentSession &&
@@ -223,8 +273,7 @@ class StudyProvider extends ChangeNotifier {
     }
     // 2. [현재 챕터 무한 반복 모드]
     else if (_playMode == PlayMode.sectionRepeat) {
-      final steps = currentSection?.steps ?? [];
-      int currentStartIndex = fromIndex;
+      int currentStartIndex = startIndex;
       String? currentInitialText = initialText;
 
       while (_isContinuousPlaying &&
@@ -236,6 +285,7 @@ class StudyProvider extends ChangeNotifier {
           }
           final s = steps[i];
           _activeStepId = s.stepId;
+          _selectedStepId = s.stepId;
           notifyListeners();
 
           final text = (i == currentStartIndex && currentInitialText != null)
@@ -254,16 +304,16 @@ class StudyProvider extends ChangeNotifier {
     }
     // 3. [현재 챕터 1회 재생 모드]
     else if (_playMode == PlayMode.sectionPlay) {
-      final steps = currentSection?.steps ?? [];
-      for (var i = fromIndex; i < steps.length; i++) {
+      for (var i = startIndex; i < steps.length; i++) {
         if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
           break;
         }
         final s = steps[i];
         _activeStepId = s.stepId;
+        _selectedStepId = s.stepId;
         notifyListeners();
 
-        final text = (i == fromIndex && initialText != null)
+        final text = (i == startIndex && initialText != null)
             ? initialText
             : s.effectiveScript;
         await _ttsService.speak(text, stepId: s.stepId);
@@ -291,16 +341,17 @@ class StudyProvider extends ChangeNotifier {
         _selectedSectionIndex = secIdx;
         notifyListeners();
 
-        final steps = _sections[secIdx].steps;
+        final secSteps = _sections[secIdx].steps;
         final isStartSection = (secIdx == startSectionIndex);
-        final startIdx = isStartSection ? fromIndex.clamp(0, steps.length) : 0;
+        final startIdx = isStartSection ? startIndex.clamp(0, secSteps.length) : 0;
 
-        for (var stepIdx = startIdx; stepIdx < steps.length; stepIdx++) {
+        for (var stepIdx = startIdx; stepIdx < secSteps.length; stepIdx++) {
           if (!_isContinuousPlaying || _playbackSessionId != currentSession) {
             break;
           }
-          final s = steps[stepIdx];
+          final s = secSteps[stepIdx];
           _activeStepId = s.stepId;
+          _selectedStepId = s.stepId;
           notifyListeners();
 
           final text =
@@ -334,9 +385,20 @@ class StudyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isDisposed = false;
+
   /// 데이터 새로고침
   Future<void> refresh() async {
-    _sections = await _repository.loadSections();
+    final loadedSections = await _repository.loadSections();
+    if (_isDisposed) return;
+    _sections = loadedSections;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _repository.removeListener(_onRepositoryChanged);
+    super.dispose();
   }
 }

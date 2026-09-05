@@ -640,6 +640,41 @@ Apps Script 웹앱은 콜드 스타트 때 5초를 넘나든다. 기존 5초 제
 * **`flutter test`**: **15개 파일 56개 전체 통과** (기존 55개 + 신규 1개)
 * **릴리즈 빌드 보류 준수**: 사용자 요청에 따라 새 릴리즈 APK 빌드는 보류 상태 유지.
 
+---
+
+## 16. 2026-09-05 작업 기록 — 릴리즈 APK 빌드 및 실기기(USB) 업데이트 설치
+
+**작업 주체:** Antigravity / **의뢰인:** 박상환
+
+### 16.1 작업 배경 및 목표
+* **목표**: 1~15단계에 걸쳐 완료된 5개 주요 기능 개선 및 대본 5문장 수정 사항을 반영하여, USB로 연결된 실기기 스마트폰(`R3CX60PDSTA`)에 최신 정식 릴리즈 버전을 무손실 업데이트 설치.
+* **보호 원칙**:
+  - `flutter run` 금지 원칙 준수 (사용자의 인증 토큰, 맞춤 간증, 설정 데이터 유실 방지).
+  - 기존 릴리즈 서명 키(`android/key.properties`) 및 원격 라이선스 API 정의(`LICENSE_API_URL`)를 탑재한 정식 릴리즈 APK 빌드.
+  - `adb install -r`을 통한 기존 앱 데이터 보존 인플레이스 업그레이드.
+
+### 16.2 진행 내역
+1. **버전 번호 갱신 (`pubspec.yaml`)**:
+   - `version: 1.0.1+2` ➔ `version: 1.0.2+3` (Android Package Manager 버전 업그레이드 인지).
+2. **정식 릴리즈 APK 빌드 (`flutter build apk --release`)**:
+   - Keystore 서명 및 Proguard R8 정상 통과.
+   - 빌드 결과물: `build\app\outputs\flutter-apk\app-release.apk` (55.9MB).
+3. **실기기 ADB 설치 (`adb -s R3CX60PDSTA install -r ...`)**:
+   - `Performing Streamed Install` ➔ `Success`.
+   - 설치 후 패키지 검증: `versionCode=3`, `versionName=1.0.2` 정상 적용 확인.
+4. **앱 자동 구동 (`monkey -p com.evangelism.just_ee.just_ee_master ...`)**:
+   - 스마트폰 화면에 최신 앱 정상 런처 실행 확인.
+
+### 16.3 최종 검증 결과
+* **`flutter analyze`**: **경고 0건 (No issues found!)**
+* **`flutter test`**: **15개 파일 56개 전체 통과**
+* **실기기 동작 확인**:
+  - 패키지: `com.evangelism.just_ee.just_ee_master`
+  - 기기 ID: `R3CX60PDSTA`
+  - 적용 버전: `1.0.2 (Build 3)`
+  - 앱 런칭 완료 및 데이터 보존 상태 확인.
+
+
 
 
 
